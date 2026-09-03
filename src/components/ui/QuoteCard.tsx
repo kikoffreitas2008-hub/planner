@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import type { ViewStyle } from "react-native";
+import { Platform, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { cardTokens, colors, layoutTokens, radius, shadow, spacing, typography } from "@/theme/tokens";
@@ -68,7 +69,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.large,
     backgroundColor: colors.blackGlossStart,
     padding: spacing.xl,
-    ...shadow.card,
+    ...(Platform.OS === "web"
+      ? ({ boxShadow: "0 9px 22px rgba(30, 30, 34, 0.14)" } as ViewStyle)
+      : shadow.card),
   },
   sheen: {
     position: "absolute",
