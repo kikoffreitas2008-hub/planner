@@ -108,14 +108,21 @@ export const cardTokens = Object.freeze({
   gradientStart: Object.freeze({ x: 0, y: 0.88 }),
   gradientEnd: Object.freeze({ x: 1, y: 0.12 }),
   glossCenterX: 0.6,
-  glossOpacity: 0.34,
-  innerHighlightOpacity: 0.62,
+  // Owner asked for a glossier finish than the original mockups: a stronger
+  // reflection ellipse plus a top sheen band.
+  glossOpacity: 0.5,
+  glossSheenOpacity: 0.55,
+  innerHighlightOpacity: 0.74,
 });
 
 export const layoutTokens = Object.freeze({
   contentMaxWidth: 760,
   horizontalPadding: 20,
-  quoteMinHeight: 210,
+  // Mobile-first: the quote card is the hero of Today. It grows with the
+  // viewport (see QuoteCard) but never below this.
+  quoteMinHeight: 320,
+  quoteViewportRatio: 0.42,
+  quoteMaxHeight: 480,
   taskMinHeight: 120,
   projectMinHeight: 168,
   rememberHeight: 48,
