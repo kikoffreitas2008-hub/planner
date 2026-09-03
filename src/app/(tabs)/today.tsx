@@ -1,33 +1,51 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useMemo, useState } from "react";
 
+import { AgendaFormModal, type AgendaFormResult } from "@/components/agenda/AgendaFormModal";
+import { AgendaSection } from "@/components/agenda/AgendaSection";
 import { AppScreen } from "@/components/ui/AppScreen";
 import { Divider } from "@/components/ui/Divider";
-import { GlossyCard } from "@/components/ui/GlossyCard";
+import { PlusMenu } from "@/components/ui/PlusMenu";
 import { QuoteCard } from "@/components/ui/QuoteCard";
 import { RoundIconButton } from "@/components/ui/RoundIconButton";
-import { colors, palette, spacing, typography, type PaletteKey } from "@/theme/tokens";
+import quotesData from "@/data/bible-quotes.en-US.json";
+import { calendarItems } from "@/data/repositories";
+import type { AgendaItem } from "@/domain/agenda";
+import { quoteForLocalDate, type BibleQuote } from "@/domain/dailyQuote";
+import { formatDayHeading, todayInLisbon } from "@/lib/today";
 
-const PALETTE_KEYS = Object.keys(palette) as PaletteKey[];
+const QUOTES = quotesData as BibleQuote[];
 
-function formatTodaySubtitle(now: Date): string {
-  const weekday = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Europe/Lisbon",
-    weekday: "long",
-  }).format(now);
-  const date = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Lisbon",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(now);
-  return `${weekday} · ${date}`;
-}
+type FormState =
+  | null
+  | { mode: "create"; itemType: "task" | "event" }
+  | { mode: "edit"; item: AgendaItem };
 
 export default function TodayScreen() {
+  const date = todayInLisbon();
+  const quote = useMemo(() => quoteForLocalDate(date, QUOTES), [date]);
+  const [form, setForm] = useState<FormState>(null);
+
+  function handleSubmit(result: AgendaFormResult) {
+    if (form?.mode === "edit" && form.item.origin.kind === "calendar") {
+      calendarItems.update(form.item.origin.id, {
+        title: result.title,
+        notes: result.notes,
+        date: result.date,
+        all_day: result.all_day,
+        starts_at: result.starts_at,
+        ends_at: result.ends_at,
+        color: result.color,
+      });
+    } else {
+      calendarItems.create(result);
+    }
+    setForm(null);
+  }
+
   return (
     <AppScreen
       title="Today"
-      subtitle={formatTodaySubtitle(new Date())}
+      subtitle={formatDayHeading(date)}
       headerRight={
         <>
           <RoundIconButton
@@ -35,58 +53,32 @@ export default function TodayScreen() {
             ion="person-circle-outline"
             accessibilityLabel="Profile and settings"
           />
-          <RoundIconButton sf="plus" ion="add" accessibilityLabel="Create" />
+          <PlusMenu
+            options={[
+              { key: "todo", label: "New to-do", onPress: () => setForm({ mode: "create", itemType: "task" }) },
+              { key: "event", label: "New event", onPress: () => setForm({ mode: "create", itemType: "event" }) },
+              { key: "reminder", label: "New reminder", onPress: () => {}, disabled: true },
+              { key: "routine", label: "New routine item", onPress: () => {}, disabled: true },
+            ]}
+          />
         </>
       }
     >
-      <QuoteCard
-        text="Your word is a lamp to my feet, and a light for my path."
-        reference="Psalm 119:105"
-      />
+      <QuoteCard text={quote.text} reference={quote.reference} />
 
       <Divider />
 
-      <Text style={styles.sectionHeading}>Palette check</Text>
-      <Text style={styles.note}>
-        One GlossyCard per palette colour, each on its own row. Compare the
-        gradient, gloss and shadow against blueprint/assets/screenshots.
-      </Text>
+      <AgendaSection date={date} onEditItem={(item) => setForm({ mode: "edit", item })} />
 
-      {PALETTE_KEYS.map((key) => (
-        <GlossyCard key={key} color={key} size="task">
-          <View style={styles.cardBody}>
-            <Text style={[styles.cardTitle, { color: palette[key].ink }]}>
-              {key[0].toUpperCase() + key.slice(1)}
-            </Text>
-            <Text style={[styles.cardMeta, { color: palette[key].ink }]}>
-              {palette[key].start} → {palette[key].end}
-            </Text>
-          </View>
-        </GlossyCard>
-      ))}
+      {form ? (
+        <AgendaFormModal
+          visible
+          defaultDate={date}
+          initial={form}
+          onCancel={() => setForm(null)}
+          onSubmit={handleSubmit}
+        />
+      ) : null}
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  sectionHeading: {
-    ...typography.heading,
-    color: colors.text,
-    marginTop: spacing.xs,
-  },
-  note: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
-  cardBody: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  cardTitle: {
-    ...typography.heading,
-  },
-  cardMeta: {
-    ...typography.caption,
-    opacity: 0.8,
-  },
-});
