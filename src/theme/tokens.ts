@@ -108,11 +108,9 @@ export const cardTokens = Object.freeze({
   gradientStart: Object.freeze({ x: 0, y: 0.88 }),
   gradientEnd: Object.freeze({ x: 1, y: 0.12 }),
   glossCenterX: 0.6,
-  // Owner asked for a glossier finish than the original mockups: a stronger
-  // reflection ellipse plus a top sheen band.
-  glossOpacity: 0.5,
-  glossSheenOpacity: 0.55,
-  innerHighlightOpacity: 0.74,
+  // Restrained gloss — a single soft reflection ellipse, no top sheen.
+  glossOpacity: 0.3,
+  innerHighlightOpacity: 0.58,
 });
 
 export const layoutTokens = Object.freeze({

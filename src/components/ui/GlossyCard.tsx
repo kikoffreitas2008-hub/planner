@@ -52,20 +52,7 @@ export function GlossyCard({
         start={cardTokens.gradientStart}
         style={[StyleSheet.absoluteFill, styles.nonInteractive]}
       />
-      {/* Top sheen: a soft white band down from the top edge. */}
-      <LinearGradient
-        accessibilityElementsHidden
-        accessible={false}
-        colors={[
-          `rgba(255, 255, 255, ${cardTokens.glossSheenOpacity})`,
-          "rgba(255, 255, 255, 0)",
-        ]}
-        locations={[0, 1]}
-        start={{ x: 0.1, y: 0 }}
-        end={{ x: 0.35, y: 1 }}
-        style={[styles.sheen, styles.nonInteractive]}
-      />
-      {/* Reflection ellipse, near-centre but deliberately asymmetric. */}
+      {/* One soft reflection ellipse, near-centre but deliberately asymmetric. */}
       <View
         accessibilityElementsHidden
         accessible={false}
@@ -97,23 +84,14 @@ const styles = StyleSheet.create({
       ? ({ boxShadow: "0 9px 22px rgba(30, 30, 34, 0.14)" } as ViewStyle)
       : shadow.card),
   },
-  sheen: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "52%",
-    borderTopLeftRadius: radius.large,
-    borderTopRightRadius: radius.large,
-  },
   gloss: {
     position: "absolute",
-    top: "-46%",
-    left: `${cardTokens.glossCenterX * 100 - 32}%`,
-    width: "74%",
-    height: "126%",
+    top: "-42%",
+    left: `${cardTokens.glossCenterX * 100 - 28}%`,
+    width: "66%",
+    height: "118%",
     borderRadius: radius.pill,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.whiteGloss,
     opacity: cardTokens.glossOpacity,
     transform: [{ rotate: "-14deg" }],
   },

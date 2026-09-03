@@ -35,15 +35,7 @@ export function QuoteCard({ text, reference }: QuoteCardProps) {
         end={cardTokens.gradientEnd}
         style={[StyleSheet.absoluteFill, styles.nonInteractive]}
       />
-      {/* Top sheen. */}
-      <LinearGradient
-        accessible={false}
-        colors={["rgba(255, 255, 255, 0.20)", "rgba(255, 255, 255, 0)"]}
-        start={{ x: 0.1, y: 0 }}
-        end={{ x: 0.4, y: 1 }}
-        style={[styles.sheen, styles.nonInteractive]}
-      />
-      {/* Reflection ellipse. */}
+      {/* One faint reflection ellipse. */}
       <View
         accessible={false}
         importantForAccessibility="no-hide-descendants"
@@ -73,24 +65,15 @@ const styles = StyleSheet.create({
       ? ({ boxShadow: "0 9px 22px rgba(30, 30, 34, 0.14)" } as ViewStyle)
       : shadow.card),
   },
-  sheen: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "50%",
-    borderTopLeftRadius: radius.large,
-    borderTopRightRadius: radius.large,
-  },
   gloss: {
     position: "absolute",
-    top: "-46%",
-    left: `${cardTokens.glossCenterX * 100 - 32}%`,
-    width: "74%",
-    height: "128%",
+    top: "-42%",
+    left: `${cardTokens.glossCenterX * 100 - 28}%`,
+    width: "66%",
+    height: "120%",
     borderRadius: radius.pill,
     backgroundColor: "#FFFFFF",
-    opacity: 0.16,
+    opacity: 0.08,
     transform: [{ rotate: "-14deg" }],
   },
   innerHighlight: {
@@ -101,7 +84,7 @@ const styles = StyleSheet.create({
     left: 0,
     borderWidth: 1,
     borderRadius: radius.large,
-    borderColor: "rgba(255, 255, 255, 0.18)",
+    borderColor: "rgba(255, 255, 255, 0.14)",
   },
   center: {
     flex: 1,
