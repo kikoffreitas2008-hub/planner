@@ -5,6 +5,7 @@ import { AgendaSection } from "@/components/agenda/AgendaSection";
 import { OverdueReviewSheet } from "@/components/agenda/OverdueReviewSheet";
 import { RememberSection } from "@/components/remember/RememberSection";
 import { RoutineCard } from "@/components/routine/RoutineCard";
+import { SettingsSheet } from "@/components/settings/SettingsSheet";
 import { AppScreen } from "@/components/ui/AppScreen";
 import { Divider } from "@/components/ui/Divider";
 import { PlusMenu } from "@/components/ui/PlusMenu";
@@ -32,6 +33,7 @@ export default function TodayScreen() {
   const [form, setForm] = useState<FormState>(null);
   const [routineAddSignal, setRoutineAddSignal] = useState(0);
   const [overdueDismissed, setOverdueDismissed] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const quote = useMemo(() => quoteForLocalDate(realToday, QUOTES), [realToday]);
   const overdue = useOverdueCandidates(realToday);
@@ -62,6 +64,7 @@ export default function TodayScreen() {
             sf="person.crop.circle"
             ion="person-circle-outline"
             accessibilityLabel="Profile and settings"
+            onPress={() => setSettingsOpen(true)}
           />
           <PlusMenu
             options={[
@@ -124,6 +127,8 @@ export default function TodayScreen() {
           onDone={() => setOverdueDismissed(true)}
         />
       ) : null}
+
+      {settingsOpen ? <SettingsSheet onClose={() => setSettingsOpen(false)} /> : null}
     </AppScreen>
   );
 }

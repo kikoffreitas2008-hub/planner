@@ -103,12 +103,12 @@ test("archiving hides a project without touching its data; restore brings it bac
   assert.equal(getDatabase().projects[project.id].archived_at, null);
 });
 
-test("permanent delete removes the project, its items, and leaves a tombstone", () => {
+test("permanent delete soft-deletes the project and its items and leaves a tombstone", () => {
   const project = makeProject();
-  projectItems.create(project.id, null, { title: "gone" });
+  const child = projectItems.create(project.id, null, { title: "gone" });
   projects.purge(project.id);
-  assert.equal(getDatabase().projects[project.id], undefined);
-  assert.equal(Object.keys(getDatabase().project_items).length, 0);
+  assert.ok(getDatabase().projects[project.id].deleted_at);
+  assert.ok(getDatabase().project_items[child.id].deleted_at);
   const tombstones = Object.values(getDatabase().sync_tombstones);
   assert.equal(tombstones.length, 1);
   assert.equal(tombstones[0].entity_id, project.id);

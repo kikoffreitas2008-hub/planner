@@ -60,7 +60,7 @@ test("the database survives a serialize / reload round-trip", () => {
   assert.equal(getDatabase().calendar_items[item.id]?.title, "Dentist");
 });
 
-test("soft delete then restore keeps the row; purge removes it and leaves a tombstone", () => {
+test("soft delete then restore keeps the row; purge tombstones it and leaves it deleted", () => {
   const item = calendarItems.create({ item_type: "task", title: "Temp", date: "2026-09-04" });
 
   calendarItems.softDelete(item.id);
@@ -70,7 +70,8 @@ test("soft delete then restore keeps the row; purge removes it and leaves a tomb
   assert.equal(getDatabase().calendar_items[item.id].deleted_at, null);
 
   calendarItems.purge(item.id);
-  assert.equal(getDatabase().calendar_items[item.id], undefined);
+  // The row stays, soft-deleted, so the deletion syncs like any other change.
+  assert.ok(getDatabase().calendar_items[item.id].deleted_at);
   const tombstones = Object.values(getDatabase().sync_tombstones);
   assert.equal(tombstones.length, 1);
   assert.equal(tombstones[0].entity_id, item.id);

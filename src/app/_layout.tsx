@@ -5,7 +5,9 @@ import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { OfflineBar } from "@/components/ui/OfflineBar";
 import { UndoBar } from "@/components/ui/UndoBar";
+import "@/data/auth"; // initialises the session check + sync engine when configured
 import { flush } from "@/data/store";
 import { colors } from "@/theme/tokens";
 
@@ -30,6 +32,7 @@ export default function RootLayout() {
         >
           <Stack.Screen name="(tabs)" />
         </Stack>
+        <OfflineBar />
         <UndoBar />
       </SafeAreaProvider>
     </GestureHandlerRootView>

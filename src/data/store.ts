@@ -10,6 +10,23 @@ let hydrated = false;
 const listeners = new Set<() => void>();
 const hydrationListeners = new Set<() => void>();
 
+export type MutationEvent = {
+  op: "upsert" | "delete";
+  table: Table | "user_settings";
+  id: string;
+};
+
+let mutationHandler: ((event: MutationEvent) => void) | null = null;
+
+/** The sync engine registers here to mirror local writes into the outbox. */
+export function setMutationHandler(handler: ((event: MutationEvent) => void) | null): void {
+  mutationHandler = handler;
+}
+
+function emitMutation(event: MutationEvent, fromSync: boolean): void {
+  if (!fromSync) mutationHandler?.(event);
+}
+
 function notify(): void {
   for (const listener of listeners) listener();
   scheduleSave();
@@ -138,37 +155,90 @@ export function useHydrated(): boolean {
 
 // --- writes -------------------------------------------------------------
 
-export function upsertRow<T extends Table>(table: T, row: Row<T>): void {
+export function upsertRow<T extends Table>(table: T, row: Row<T>, fromSync = false): void {
   const next: TableMap<T> = { ...tableOf(table), [row.id]: row };
   db = { ...db, [table]: next } as Database;
+  emitMutation({ op: "upsert", table, id: row.id }, fromSync);
   notify();
 }
 
-export function upsertRows<T extends Table>(table: T, rows: readonly Row<T>[]): void {
+export function upsertRows<T extends Table>(
+  table: T,
+  rows: readonly Row<T>[],
+  fromSync = false,
+): void {
   if (rows.length === 0) return;
   const next: TableMap<T> = { ...tableOf(table) };
   for (const row of rows) next[row.id] = row;
   db = { ...db, [table]: next } as Database;
+  for (const row of rows) emitMutation({ op: "upsert", table, id: row.id }, fromSync);
   notify();
 }
 
-export function removeRow<T extends Table>(table: T, id: string): void {
+export function removeRow<T extends Table>(table: T, id: string, fromSync = false): void {
   const current = tableOf(table);
   if (!(id in current)) return;
   const next: TableMap<T> = { ...current };
   delete next[id];
   db = { ...db, [table]: next } as Database;
+  emitMutation({ op: "delete", table, id }, fromSync);
   notify();
 }
 
-export function setUserSettings(settings: Database["user_settings"]): void {
+export function setUserSettings(settings: Database["user_settings"], fromSync = false): void {
   db = { ...db, user_settings: settings };
+  if (settings) emitMutation({ op: "upsert", table: "user_settings", id: settings.id }, fromSync);
   notify();
 }
 
 /** The owning user id for every row created locally. */
 export function localUserId(): string {
   return db.meta.localUserId;
+}
+
+const ALL_TABLES: Table[] = [
+  "calendar_items",
+  "projects",
+  "project_items",
+  "routine_lists",
+  "routine_items",
+  "remember_items",
+  "recurrence_exceptions",
+  "sync_tombstones",
+];
+
+/**
+ * On the first sign-in, adopt the anonymous local rows for the real account so
+ * they sync up. Rows already carrying another `user_id` (pulled from the cloud)
+ * are left alone.
+ */
+export function rekeyLocalUser(userId: string): void {
+  const oldId = db.meta.localUserId;
+  if (oldId === userId) return;
+  const now = new Date().toISOString();
+  const next: Database = { ...db, meta: { ...db.meta, localUserId: userId } };
+
+  for (const table of ALL_TABLES) {
+    const map = { ...(next[table] as Record<string, { user_id: string; updated_at: string }>) };
+    for (const id of Object.keys(map)) {
+      if (map[id].user_id === oldId) map[id] = { ...map[id], user_id: userId, updated_at: now };
+    }
+    (next as unknown as Record<string, unknown>)[table] = map;
+  }
+  if (next.user_settings && next.user_settings.user_id === oldId) {
+    next.user_settings = { ...next.user_settings, user_id: userId, updated_at: now };
+  }
+  db = next;
+
+  for (const table of ALL_TABLES) {
+    for (const id of Object.keys(db[table] as object)) {
+      emitMutation({ op: "upsert", table, id }, false);
+    }
+  }
+  if (db.user_settings) {
+    emitMutation({ op: "upsert", table: "user_settings", id: db.user_settings.id }, false);
+  }
+  notify();
 }
 
 // --- test / dev helpers ---------------------------------------------------

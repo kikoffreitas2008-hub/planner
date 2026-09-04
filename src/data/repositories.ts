@@ -1,7 +1,7 @@
 import { generateKeyBetween } from "fractional-indexing";
 
 import type { Row, Table } from "@/data/db";
-import { getDatabase, localUserId, removeRow, setUserSettings, upsertRow } from "@/data/store";
+import { getDatabase, localUserId, setUserSettings, upsertRow } from "@/data/store";
 import { createClientId, type ISODate, type ISODateTime } from "@/domain/date";
 import type {
   CalendarItem,
@@ -46,6 +46,26 @@ function touch<T extends Table>(table: T, id: string, patch: Partial<Row<T>>): v
   const current = getDatabase()[table][id];
   if (!current) return;
   upsertRow(table, { ...current, ...patch, updated_at: nowISO() } as Row<T>);
+}
+
+/**
+ * A permanent delete. The row is kept soft-deleted so the deletion syncs like
+ * any other change; the tombstone drives the 30-day cleanup on every device
+ * (blueprint/04 §2). Nothing is hard-removed here.
+ */
+function tombstone(entityType: string, entityId: string): void {
+  const timestamp = nowISO();
+  upsertRow("sync_tombstones", {
+    id: createClientId(),
+    user_id: localUserId(),
+    entity_type: entityType,
+    entity_id: entityId,
+    created_at: timestamp,
+    updated_at: timestamp,
+    deleted_at: timestamp,
+    committed_at: null,
+    expires_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+  });
 }
 
 // --- calendar items (tasks and events) ----------------------------------
@@ -108,23 +128,11 @@ export const calendarItems = {
     touch("calendar_items", id, { deleted_at: null });
   },
 
-  /** Permanently drop a row and leave a tombstone for sync (M4). */
   purge(id: string): void {
     const row = getDatabase().calendar_items[id];
     if (!row) return;
-    const timestamp = nowISO();
-    upsertRow("sync_tombstones", {
-      id: createClientId(),
-      user_id: localUserId(),
-      entity_type: "calendar_items",
-      entity_id: id,
-      created_at: timestamp,
-      updated_at: timestamp,
-      deleted_at: timestamp,
-      committed_at: null,
-      expires_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
-    });
-    removeRow("calendar_items", id);
+    tombstone("calendar_items", id);
+    if (!row.deleted_at) touch("calendar_items", id, { deleted_at: nowISO() });
   },
 };
 
@@ -256,26 +264,18 @@ export const projects = {
     touch("projects", id, { order_mode: "importance_default" });
   },
 
-  /** Permanent delete: the project, its items, and a tombstone (blueprint/01 §4.6). */
+  /** Permanent delete: the project and its items, soft-deleted, plus a tombstone. */
   purge(id: string): void {
     const project = getDatabase().projects[id];
     if (!project) return;
-    for (const item of Object.values(getDatabase().project_items)) {
-      if (item.project_id === id) removeRow("project_items", item.id);
-    }
     const timestamp = nowISO();
-    upsertRow("sync_tombstones", {
-      id: createClientId(),
-      user_id: localUserId(),
-      entity_type: "projects",
-      entity_id: id,
-      created_at: timestamp,
-      updated_at: timestamp,
-      deleted_at: timestamp,
-      committed_at: null,
-      expires_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
-    });
-    removeRow("projects", id);
+    for (const item of Object.values(getDatabase().project_items)) {
+      if (item.project_id === id && !item.deleted_at) {
+        touch("project_items", item.id, { deleted_at: timestamp });
+      }
+    }
+    tombstone("projects", id);
+    if (!project.deleted_at) touch("projects", id, { deleted_at: timestamp });
   },
 };
 
@@ -374,10 +374,13 @@ export const projectItems = {
   purge(id: string): void {
     const item = getDatabase().project_items[id];
     if (!item) return;
+    const timestamp = nowISO();
     for (const child of Object.values(getDatabase().project_items)) {
-      if (child.parent_id === id) removeRow("project_items", child.id);
+      if (child.parent_id === id && !child.deleted_at) {
+        touch("project_items", child.id, { deleted_at: timestamp });
+      }
     }
-    removeRow("project_items", id);
+    if (!item.deleted_at) touch("project_items", id, { deleted_at: timestamp });
   },
 };
 
