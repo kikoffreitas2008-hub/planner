@@ -10,10 +10,12 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
   type SharedValue,
 } from "react-native-reanimated";
 
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { useUserSettings } from "@/data/store";
 import { colors, spacing } from "@/theme/tokens";
 
 const SPRING = { damping: 22, stiffness: 200 } as const;
@@ -67,6 +69,7 @@ export function DraggableColumn<T extends { id: string }>({
 }: DraggableColumnProps<T>) {
   const idsKey = data.map((item) => item.id).join("|");
   const ids = useMemo(() => (idsKey ? idsKey.split("|") : []), [idsKey]);
+  const reduceMotion = useUserSettings()?.reduce_motion ?? false;
 
   const positions = useSharedValue<Indexed>(indexMap(ids));
   const heights = useSharedValue<Heights>({});
@@ -104,6 +107,7 @@ export function DraggableColumn<T extends { id: string }>({
           ids={ids}
           enabled={enabled}
           estimate={estimatedRowHeight}
+          reduceMotion={reduceMotion}
           positions={positions}
           heights={heights}
           activeId={activeId}
@@ -124,6 +128,7 @@ type RowProps = {
   ids: readonly string[];
   enabled: boolean;
   estimate: number;
+  reduceMotion: boolean;
   positions: SharedValue<Indexed>;
   heights: SharedValue<Heights>;
   activeId: SharedValue<string | null>;
@@ -139,6 +144,7 @@ function Row({
   ids,
   enabled,
   estimate,
+  reduceMotion,
   positions,
   heights,
   activeId,
@@ -200,18 +206,30 @@ function Row({
 
   const rowStyle = useAnimatedStyle(() => {
     const isActive = activeId.value === id;
+    const restTop = topOf(id);
+    const restScale = isActive ? 1.02 : 1;
     return {
       position: "absolute",
       left: 0,
       right: 0,
-      top: isActive ? activeTop.value : withSpring(topOf(id), SPRING),
+      top: isActive ? activeTop.value : reduceMotion ? withTiming(restTop, { duration: 0 }) : withSpring(restTop, SPRING),
       zIndex: isActive ? 20 : 0,
-      transform: [{ scale: withSpring(isActive ? 1.02 : 1, SPRING) }],
+      transform: [
+        { scale: reduceMotion ? restScale : withSpring(restScale, SPRING) },
+      ],
     };
   });
 
   function handleLayout(event: LayoutChangeEvent) {
     onMeasure(id, event.nativeEvent.layout.height);
+  }
+
+  function moveByAccessibility(direction: 1 | -1) {
+    const current = positions.value[id];
+    const target = current + direction;
+    if (target < 0 || target >= ids.length) return;
+    positions.value = moveIndex(positions.value, current, target);
+    onCommit();
   }
 
   return (
@@ -223,6 +241,14 @@ function Row({
               style={styles.handle}
               accessibilityLabel="Drag to reorder"
               accessibilityRole="adjustable"
+              accessibilityActions={[
+                { name: "increment", label: "Move down" },
+                { name: "decrement", label: "Move up" },
+              ]}
+              onAccessibilityAction={(event) => {
+                if (event.nativeEvent.actionName === "increment") moveByAccessibility(1);
+                else if (event.nativeEvent.actionName === "decrement") moveByAccessibility(-1);
+              }}
             >
               <PlatformIcon
                 sf="line.3.horizontal"

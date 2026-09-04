@@ -24,7 +24,7 @@ export function ColorDot({ color, size = 16, onPress, accessibilityLabel }: Colo
 
   return (
     <Pressable
-      hitSlop={10}
+      hitSlop={14}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? `Colour: ${color}`}

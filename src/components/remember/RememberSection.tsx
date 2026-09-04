@@ -15,6 +15,7 @@ export function RememberSection({ date }: { date: ISODate }) {
   const rememberItems = useTable("remember_items");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [colorForId, setColorForId] = useState<string | null>(null);
+  const [menuForId, setMenuForId] = useState<string | null>(null);
 
   const items = useMemo(
     () =>
@@ -68,7 +69,14 @@ export function RememberSection({ date }: { date: ISODate }) {
                     autoFocus
                   />
                 ) : (
-                  <Pressable style={styles.textWrap} onPress={() => setEditingId(item.id)}>
+                  <Pressable
+                    style={styles.textWrap}
+                    onPress={() => setEditingId(item.id)}
+                    onLongPress={() => setMenuForId((id) => (id === item.id ? null : item.id))}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remember: ${item.title || "empty"}`}
+                    accessibilityHint="Double tap to edit, or use the actions below to delete"
+                  >
                     <Text
                       style={[styles.text, { color: palette[item.color].ink }]}
                       numberOfLines={1}
@@ -83,6 +91,22 @@ export function RememberSection({ date }: { date: ISODate }) {
                   accessibilityLabel={`Change colour (currently ${item.color})`}
                 />
               </View>
+              {menuForId === item.id ? (
+                <View style={styles.menu}>
+                  <Pressable
+                    onPress={() => {
+                      setMenuForId(null);
+                      removeItem(item.id);
+                    }}
+                    accessibilityRole="button"
+                    style={styles.menuAction}
+                  >
+                    <Text style={[styles.menuActionText, { color: palette[item.color].ink }]}>
+                      Delete
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : null}
             </GlossyCard>
           </SwipeableRow>
         ))
@@ -128,5 +152,19 @@ const styles = StyleSheet.create({
     ...typography.body,
     flex: 1,
     paddingVertical: 0,
+  },
+  menu: {
+    flexDirection: "row",
+    marginTop: spacing.xs,
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0, 0, 0, 0.08)",
+  },
+  menuAction: {
+    paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing.xs,
+  },
+  menuActionText: {
+    ...typography.button,
   },
 });

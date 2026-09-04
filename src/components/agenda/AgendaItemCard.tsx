@@ -55,9 +55,16 @@ export function AgendaItemCard({
             onPress={onEdit}
             onLongPress={() => setMenuOpen((open) => !open)}
             accessibilityRole="button"
-            accessibilityLabel={`${item.itemKind === "event" ? "Event" : "To-do"}: ${item.title}${
-              done ? ", completed" : ""
-            }`}
+            accessibilityLabel={[
+              `${item.itemKind === "event" ? "Event" : "To-do"}: ${item.title}`,
+              timeLabel(item),
+              `${item.color} colour`,
+              fromProject ? "from a project" : null,
+              repeats ? "repeats" : null,
+              done ? "completed" : null,
+            ]
+              .filter(Boolean)
+              .join(", ")}
             style={styles.titleWrap}
           >
             <View style={styles.kindRow}>

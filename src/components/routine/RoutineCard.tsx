@@ -22,6 +22,7 @@ export function RoutineCard({ addSignal }: { addSignal: number }) {
   const routineItems = useTable("routine_items");
   const inputRef = useRef<TextInput>(null);
   const [draft, setDraft] = useState("");
+  const [menuForId, setMenuForId] = useState<string | null>(null);
 
   useEffect(() => {
     routine.ensureDefaultList();
@@ -84,24 +85,48 @@ export function RoutineCard({ addSignal }: { addSignal: number }) {
               onSwipeLeft={() => remove(item.id)}
               rightLabel={item.completed_at ? "Uncheck" : "Check"}
             >
-              <View style={styles.row}>
-                <Pressable
-                  onPress={() => routine.setChecked(item.id, !item.completed_at)}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: Boolean(item.completed_at) }}
-                  accessibilityLabel={item.title}
-                  hitSlop={8}
-                >
-                  <PlatformIcon
-                    sf={item.completed_at ? "checkmark.circle.fill" : "circle"}
-                    ion={item.completed_at ? "checkmark-circle" : "ellipse-outline"}
-                    size={24}
-                    color={item.completed_at ? colors.text : colors.textSecondary}
-                  />
-                </Pressable>
-                <Text style={[styles.itemText, item.completed_at && styles.itemTextDone]}>
-                  {item.title}
-                </Text>
+              <View>
+                <View style={styles.row}>
+                  <Pressable
+                    onPress={() => routine.setChecked(item.id, !item.completed_at)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: Boolean(item.completed_at) }}
+                    accessibilityLabel={item.title}
+                    hitSlop={8}
+                  >
+                    <PlatformIcon
+                      sf={item.completed_at ? "checkmark.circle.fill" : "circle"}
+                      ion={item.completed_at ? "checkmark-circle" : "ellipse-outline"}
+                      size={24}
+                      color={item.completed_at ? colors.text : colors.textSecondary}
+                    />
+                  </Pressable>
+                  <Pressable
+                    style={styles.itemTextWrap}
+                    onLongPress={() => setMenuForId((id) => (id === item.id ? null : item.id))}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${item.title}${item.completed_at ? ", checked" : ""}`}
+                    accessibilityHint="Double tap and hold for more actions"
+                  >
+                    <Text style={[styles.itemText, item.completed_at && styles.itemTextDone]}>
+                      {item.title}
+                    </Text>
+                  </Pressable>
+                </View>
+                {menuForId === item.id ? (
+                  <View style={styles.menu}>
+                    <Pressable
+                      onPress={() => {
+                        setMenuForId(null);
+                        remove(item.id);
+                      }}
+                      accessibilityRole="button"
+                      style={styles.menuAction}
+                    >
+                      <Text style={styles.menuActionText}>Delete</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
               </View>
             </SwipeableRow>
           )}
@@ -169,6 +194,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.xxs,
   },
+  itemTextWrap: {
+    flexShrink: 1,
+  },
   itemText: {
     ...typography.body,
     color: colors.text,
@@ -177,6 +205,19 @@ const styles = StyleSheet.create({
   itemTextDone: {
     textDecorationLine: "line-through",
     color: colors.textSecondary,
+  },
+  menu: {
+    flexDirection: "row",
+    marginTop: spacing.xxs,
+    paddingLeft: spacing.xl,
+  },
+  menuAction: {
+    paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing.xs,
+  },
+  menuActionText: {
+    ...typography.button,
+    color: "#662C2C",
   },
   input: {
     ...typography.body,

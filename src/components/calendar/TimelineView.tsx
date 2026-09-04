@@ -6,10 +6,12 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
 
 import { markSwipe, swipedRecently } from "@/components/agenda/swipeGuard";
 import { moveAgendaItem, resizeAgendaItem } from "@/data/agendaEdit";
+import { useUserSettings } from "@/data/store";
 import type { AgendaItem } from "@/domain/agenda";
 import { weekRange, weekdayLabels } from "@/domain/calendarGrid";
 import type { ISODate } from "@/domain/date";
@@ -204,6 +206,7 @@ function TimelineBlock({
   const moveY = useSharedValue(0);
   const extraHeight = useSharedValue(0);
   const ink = palette[item.color].ink;
+  const reduceMotion = useUserSettings()?.reduce_motion ?? false;
 
   // Drag the block to move it — the new time is written on drop, no editor.
   const move = Gesture.Pan()
@@ -220,7 +223,7 @@ function TimelineBlock({
       const newTop = Math.max(0, placement.top + moveY.value);
       runOnJS(markSwipe)();
       runOnJS(moveAgendaItem)(item, date, (newTop / PPH) * 60);
-      moveY.value = withSpring(0);
+      moveY.value = reduceMotion ? withTiming(0, { duration: 0 }) : withSpring(0);
     });
 
   const resize = Gesture.Pan()
@@ -236,7 +239,7 @@ function TimelineBlock({
       const newBottom = placement.top + placement.height + extraHeight.value;
       runOnJS(markSwipe)();
       runOnJS(resizeAgendaItem)(item, (newBottom / PPH) * 60);
-      extraHeight.value = withSpring(0);
+      extraHeight.value = reduceMotion ? withTiming(0, { duration: 0 }) : withSpring(0);
     });
 
   const style = useAnimatedStyle(() => ({
