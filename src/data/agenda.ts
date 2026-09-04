@@ -54,21 +54,24 @@ function baseAgendaItem(item: CalendarItem): Omit<AgendaItem, "date" | "occurren
   };
 }
 
+/** One non-recurring calendar item as an agenda entry. */
+export function calendarAgendaItem(item: CalendarItem): AgendaItem {
+  return {
+    ...baseAgendaItem(item),
+    date: item.date,
+    occurrenceId: item.id,
+    startsAt: item.starts_at,
+    endsAt: item.ends_at,
+  };
+}
+
 /** Expand one calendar item onto a single date (0 or 1 entries). */
 function expandForDate(item: CalendarItem, date: ISODate): AgendaItem[] {
   if (item.deleted_at) return [];
 
   if (!item.recurrence_rule) {
     if (item.date !== date) return [];
-    return [
-      {
-        ...baseAgendaItem(item),
-        date,
-        occurrenceId: item.id,
-        startsAt: item.starts_at,
-        endsAt: item.ends_at,
-      },
-    ];
+    return [calendarAgendaItem(item)];
   }
 
   let rule: RecurrenceRule;

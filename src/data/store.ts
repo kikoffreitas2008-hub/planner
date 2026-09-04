@@ -43,9 +43,26 @@ export function flush(): void {
 // --- hydration --------------------------------------------------------------
 
 function seed(base: Database): Database {
+  const localUserId = base.meta.localUserId || createClientId();
+  const now = new Date().toISOString();
   return {
     ...base,
-    meta: { ...base.meta, localUserId: base.meta.localUserId || createClientId() },
+    meta: { ...base.meta, localUserId },
+    user_settings: base.user_settings ?? {
+      id: createClientId(),
+      user_id: localUserId,
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+      time_zone: "Europe/Lisbon",
+      last_overdue_review_date: null,
+      week_starts_on: 1,
+      notifications_enabled: false,
+      project_progress_visible: true,
+      reduce_motion: false,
+      default_calendar_view: "month",
+      calendar_visible_anchor: null,
+    },
   };
 }
 
@@ -58,7 +75,7 @@ export function hydrate(): void {
   if (hydrated) return;
   const loaded = loadDatabase();
   if (loaded && loaded.meta?.schemaVersion === SCHEMA_VERSION) {
-    db = { ...createEmptyDatabase(), ...loaded, meta: { ...loaded.meta } };
+    db = seed({ ...createEmptyDatabase(), ...loaded, meta: { ...loaded.meta } });
   }
   hydrated = true;
   for (const listener of hydrationListeners) listener();

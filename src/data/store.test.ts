@@ -18,7 +18,7 @@ class MemoryStorage {
 
 const { loadDatabase, saveDatabase, clearDatabase } = await import("./persistence.ts");
 const { getDatabase, resetDatabaseForTests, replaceDatabase } = await import("./store.ts");
-const { calendarItems } = await import("./repositories.ts");
+const { calendarItems, routine, remember, settings } = await import("./repositories.ts");
 const { createEmptyDatabase } = await import("./db.ts");
 
 beforeEach(() => {
@@ -82,4 +82,29 @@ test("completing an item stamps completed_at and clearing it unsets it", () => {
   assert.ok(getDatabase().calendar_items[item.id].completed_at);
   calendarItems.setCompleted(item.id, false);
   assert.equal(getDatabase().calendar_items[item.id].completed_at, null);
+});
+
+test("routine reset only clears checked items and keeps the list", () => {
+  const list = routine.ensureDefaultList();
+  const a = routine.addItem(list.id, "Water");
+  const b = routine.addItem(list.id, "Stretch");
+  routine.setChecked(a.id, true);
+  routine.setChecked(b.id, true);
+
+  routine.resetList(list.id);
+  assert.equal(getDatabase().routine_items[a.id].completed_at, null);
+  assert.equal(getDatabase().routine_items[b.id].completed_at, null);
+  assert.equal(getDatabase().routine_items[a.id].deleted_at, null);
+});
+
+test("a blank remember item is created and can be filled in later", () => {
+  const row = remember.create("2026-09-04", "");
+  assert.equal(getDatabase().remember_items[row.id].title, "");
+  remember.update(row.id, { title: "Call the bank" });
+  assert.equal(getDatabase().remember_items[row.id].title, "Call the bank");
+});
+
+test("marking the overdue review stores today's date in settings", () => {
+  settings.markOverdueReviewed("2026-09-04");
+  assert.equal(getDatabase().user_settings?.last_overdue_review_date, "2026-09-04");
 });

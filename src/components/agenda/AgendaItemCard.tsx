@@ -2,18 +2,22 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ColorDot } from "@/components/ui/ColorDot";
-import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { ColorPickerSheet } from "@/components/ui/ColorPickerSheet";
 import { GlossyCard } from "@/components/ui/GlossyCard";
+import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import type { AgendaItem } from "@/domain/agenda";
 import { formatClock } from "@/lib/today";
-import { palette, spacing, typography } from "@/theme/tokens";
+import { colors, palette, radius, spacing, typography, type PaletteKey } from "@/theme/tokens";
 
 export type AgendaItemCardProps = {
   item: AgendaItem;
   onToggleComplete: () => void;
   onDelete: () => void;
   onEdit: () => void;
-  onPressColor?: () => void;
+  /** Edit mode: the time range becomes an editable grey capsule. */
+  editMode?: boolean;
+  onEditTime?: () => void;
+  onChangeColor?: (color: PaletteKey) => void;
 };
 
 function timeLabel(item: AgendaItem): string {
@@ -22,7 +26,7 @@ function timeLabel(item: AgendaItem): string {
     return `${formatClock(item.startsAt)} - ${formatClock(item.endsAt)}`;
   }
   if (item.startsAt) return formatClock(item.startsAt);
-  return "";
+  return "No time";
 }
 
 export function AgendaItemCard({
@@ -30,9 +34,12 @@ export function AgendaItemCard({
   onToggleComplete,
   onDelete,
   onEdit,
-  onPressColor,
+  editMode = false,
+  onEditTime,
+  onChangeColor,
 }: AgendaItemCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [colorOpen, setColorOpen] = useState(false);
   const ink = palette[item.color].ink;
   const done = Boolean(item.completedAt);
   const fromProject = item.origin.kind === "project";
@@ -61,9 +68,7 @@ export function AgendaItemCard({
               <Text style={[styles.kindLabel, { color: ink }]}>
                 {item.itemKind === "event" ? "Event" : "To-do"}
               </Text>
-              {fromProject ? (
-                <Text style={[styles.marker, { color: ink }]}>· Project</Text>
-              ) : null}
+              {fromProject ? <Text style={[styles.marker, { color: ink }]}>· Project</Text> : null}
               {repeats ? <Text style={[styles.marker, { color: ink }]}>· Repeats</Text> : null}
             </View>
             <Text
@@ -75,15 +80,22 @@ export function AgendaItemCard({
           </View>
 
           <View style={styles.timeWrap}>
-            {done ? (
-              <PlatformIcon sf="checkmark" ion="checkmark" size={16} color={ink} />
-            ) : null}
-            {timeLabel(item) ? (
+            {done ? <PlatformIcon sf="checkmark" ion="checkmark" size={16} color={ink} /> : null}
+            {editMode && !item.allDay ? (
+              <Pressable
+                onPress={onEditTime}
+                accessibilityRole="button"
+                accessibilityLabel={`Edit time, currently ${timeLabel(item)}`}
+                style={styles.capsule}
+              >
+                <Text style={[styles.time, { color: ink }]}>{timeLabel(item)}</Text>
+              </Pressable>
+            ) : (
               <Text style={[styles.time, { color: ink }]}>{timeLabel(item)}</Text>
-            ) : null}
+            )}
             <ColorDot
               color={item.color}
-              onPress={onPressColor}
+              onPress={onChangeColor ? () => setColorOpen(true) : undefined}
               accessibilityLabel={`Change colour (currently ${item.color})`}
             />
           </View>
@@ -103,6 +115,15 @@ export function AgendaItemCard({
           </View>
         ) : null}
       </Pressable>
+
+      {onChangeColor ? (
+        <ColorPickerSheet
+          visible={colorOpen}
+          value={item.color}
+          onPick={onChangeColor}
+          onClose={() => setColorOpen(false)}
+        />
+      ) : null}
     </GlossyCard>
   );
 }
@@ -157,6 +178,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
+  },
+  capsule: {
+    backgroundColor: colors.mutedSurface,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
   },
   time: {
     ...typography.body,

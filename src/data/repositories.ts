@@ -1,9 +1,16 @@
 import { generateKeyBetween } from "fractional-indexing";
 
 import type { Row, Table } from "@/data/db";
-import { getDatabase, localUserId, removeRow, upsertRow } from "@/data/store";
+import { getDatabase, localUserId, removeRow, setUserSettings, upsertRow } from "@/data/store";
 import { createClientId, type ISODate, type ISODateTime } from "@/domain/date";
-import type { CalendarItem, PaletteColor, RememberItem, RoutineItem, RoutineList } from "@/domain/entities";
+import type {
+  CalendarItem,
+  PaletteColor,
+  RememberItem,
+  RoutineItem,
+  RoutineList,
+  UserSettings,
+} from "@/domain/entities";
 
 function nowISO(): ISODateTime {
   return new Date().toISOString();
@@ -129,6 +136,14 @@ export const routine = {
     return row;
   },
 
+  /** The single Morning Routine list, created on first use. */
+  ensureDefaultList(): RoutineList {
+    const existing = Object.values(getDatabase().routine_lists).find(
+      (list) => !list.deleted_at && !list.archived_at,
+    );
+    return existing ?? routine.createList("Morning Routine");
+  },
+
   addItem(listId: string, title: string): RoutineItem {
     const row: RoutineItem = {
       ...base("routine_items"),
@@ -184,5 +199,19 @@ export const remember = {
 
   restore(id: string): void {
     touch("remember_items", id, { deleted_at: null });
+  },
+};
+
+// --- user settings --------------------------------------------------------
+
+export const settings = {
+  update(patch: Partial<UserSettings>): void {
+    const current = getDatabase().user_settings;
+    if (!current) return;
+    setUserSettings({ ...current, ...patch, updated_at: nowISO() });
+  },
+
+  markOverdueReviewed(date: ISODate): void {
+    settings.update({ last_overdue_review_date: date });
   },
 };
