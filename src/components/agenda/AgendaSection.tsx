@@ -6,7 +6,8 @@ import { SwipeableRow } from "@/components/agenda/SwipeableRow";
 import { swipedRecently } from "@/components/agenda/swipeGuard";
 import { TimeEditModal } from "@/components/agenda/TimeEditModal";
 import { useDayAgenda } from "@/data/agenda";
-import { calendarItems } from "@/data/repositories";
+import { calendarItems, projectItems } from "@/data/repositories";
+import { getDatabase } from "@/data/store";
 import { offerUndo } from "@/data/undoBar";
 import type { AgendaItem } from "@/domain/agenda";
 import type { ISODate } from "@/domain/date";
@@ -31,23 +32,35 @@ export function AgendaSection({
   const [editMode, setEditMode] = useState(false);
   const [timeEditItem, setTimeEditItem] = useState<AgendaItem | null>(null);
 
-  function calendarId(item: AgendaItem): string | null {
-    return item.origin.kind === "calendar" ? item.origin.id : null;
-  }
-
   function toggleComplete(item: AgendaItem) {
-    const id = calendarId(item);
-    if (id) calendarItems.setCompleted(id, !item.completedAt);
+    const done = !item.completedAt;
+    if (item.origin.kind === "calendar") calendarItems.setCompleted(item.origin.id, done);
+    else projectItems.setCompleted(item.origin.id, done);
   }
 
   function remove(item: AgendaItem) {
-    const id = calendarId(item);
-    if (!id) return;
-    calendarItems.softDelete(id);
+    if (item.origin.kind === "calendar") {
+      const id = item.origin.id;
+      calendarItems.softDelete(id);
+      offerUndo("Item deleted", () => calendarItems.restore(id), () => calendarItems.purge(id));
+      return;
+    }
+    // A project item is a shared record — swipe-delete on Today just takes it
+    // off the day; the item stays in its project.
+    const id = item.origin.id;
+    const snapshot = getDatabase().project_items[id];
+    if (!snapshot) return;
+    projectItems.unschedule(id);
     offerUndo(
-      "Item deleted",
-      () => calendarItems.restore(id),
-      () => calendarItems.purge(id),
+      "Removed from today",
+      () =>
+        projectItems.schedule(id, {
+          scheduled_date: snapshot.scheduled_date,
+          scheduled_all_day: snapshot.scheduled_all_day,
+          scheduled_starts_at: snapshot.scheduled_starts_at,
+          scheduled_ends_at: snapshot.scheduled_ends_at,
+        }),
+      () => {},
     );
   }
 
@@ -96,10 +109,15 @@ export function AgendaSection({
                 if (!swipedRecently()) onEditItem(item);
               }}
               onEditTime={() => setTimeEditItem(item)}
-              onChangeColor={(color: PaletteKey) => {
-                const id = calendarId(item);
-                if (id) calendarItems.setColor(id, color);
-              }}
+              onChangeColor={
+                item.origin.kind === "calendar"
+                  ? (color: PaletteKey) => {
+                      if (item.origin.kind === "calendar") {
+                        calendarItems.setColor(item.origin.id, color);
+                      }
+                    }
+                  : undefined
+              }
             />
           </SwipeableRow>
         ))
@@ -111,8 +129,17 @@ export function AgendaSection({
           item={timeEditItem}
           onClose={() => setTimeEditItem(null)}
           onSave={(startsAt, endsAt) => {
-            const id = calendarId(timeEditItem);
-            if (id) calendarItems.update(id, { starts_at: startsAt, ends_at: endsAt });
+            if (timeEditItem.origin.kind === "calendar") {
+              calendarItems.update(timeEditItem.origin.id, {
+                starts_at: startsAt,
+                ends_at: endsAt,
+              });
+            } else {
+              projectItems.update(timeEditItem.origin.id, {
+                scheduled_starts_at: startsAt,
+                scheduled_ends_at: endsAt,
+              });
+            }
           }}
         />
       ) : null}
