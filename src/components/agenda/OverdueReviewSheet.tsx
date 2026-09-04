@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { DatePickerCalendar } from "@/components/ui/DatePickerCalendar";
+import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
 import { calendarItems, settings } from "@/data/repositories";
 import type { AgendaItem } from "@/domain/agenda";
 import type { ISODate } from "@/domain/date";
@@ -107,30 +109,12 @@ function OverdueRow({ item, onResolved }: { item: AgendaItem; onResolved: () => 
         </View>
       ) : (
         <View style={styles.reschedule}>
-          <TextInput
-            value={date}
-            onChangeText={setDate}
-            placeholder="New date (YYYY-MM-DD)"
-            placeholderTextColor={colors.textSecondary}
-            autoCapitalize="none"
-            style={styles.input}
+          <Text style={styles.rowMeta}>Pick a new day and time</Text>
+          <DatePickerCalendar
+            value={/^\d{4}-\d{2}-\d{2}$/.test(date) ? (date as ISODate) : null}
+            onChange={setDate}
           />
-          <View style={styles.timeRow}>
-            <TextInput
-              value={start}
-              onChangeText={setStart}
-              placeholder="09:00"
-              placeholderTextColor={colors.textSecondary}
-              style={[styles.input, styles.timeInput]}
-            />
-            <TextInput
-              value={end}
-              onChangeText={setEnd}
-              placeholder="10:00"
-              placeholderTextColor={colors.textSecondary}
-              style={[styles.input, styles.timeInput]}
-            />
-          </View>
+          <TimeRangeWheels start={start} end={end} onChangeStart={setStart} onChangeEnd={setEnd} />
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <View style={styles.actions}>
             <Action label="Confirm" onPress={confirmReschedule} primary />

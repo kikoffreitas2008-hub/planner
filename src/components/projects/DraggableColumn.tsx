@@ -13,7 +13,11 @@ import Animated, {
   type SharedValue,
 } from "react-native-reanimated";
 
+import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { colors, spacing } from "@/theme/tokens";
+
 const SPRING = { damping: 22, stiffness: 200 } as const;
+const HANDLE_WIDTH = 40;
 
 type Indexed = Record<string, number>;
 
@@ -47,9 +51,9 @@ export type DraggableColumnProps<T extends { id: string }> = {
 };
 
 /**
- * A vertical drag-to-reorder list. Long-press a row to pick it up. On drop it
- * calls `onReorder` with the new id order; the caller writes the fractional
- * keys (blueprint/01 §4.4).
+ * A vertical drag-to-reorder list. Each row carries a grip handle on the left
+ * (three lines); press and drag it to move the row — no long-press. On drop it
+ * calls `onReorder` with the new id order (blueprint/01 §4.4).
  */
 export function DraggableColumn<T extends { id: string }>({
   data,
@@ -127,7 +131,8 @@ function Row({
     () =>
       Gesture.Pan()
         .enabled(enabled)
-        .activateAfterLongPress(180)
+        .activeOffsetY([-4, 4])
+        .failOffsetX([-16, 16])
         .onStart(() => {
           activeId.value = id;
           activeStartIndex.value = positions.value[id];
@@ -148,29 +153,42 @@ function Row({
           activeOffset.value = positions.value[id] * rowHeight;
           activeId.value = null;
           runOnJS(onCommit)();
+        })
+        .onFinalize(() => {
+          if (activeId.value === id) activeId.value = null;
         }),
     [id, count, rowHeight, enabled, positions, activeId, activeStartIndex, activeOffset, onCommit],
   );
 
-  const style = useAnimatedStyle(() => {
+  const rowStyle = useAnimatedStyle(() => {
     const isActive = activeId.value === id;
     return {
       position: "absolute",
       left: 0,
       right: 0,
-      top: isActive
-        ? activeOffset.value
-        : withSpring(positions.value[id] * rowHeight, SPRING),
+      top: isActive ? activeOffset.value : withSpring(positions.value[id] * rowHeight, SPRING),
       zIndex: isActive ? 20 : 0,
       transform: [{ scale: withSpring(isActive ? 1.02 : 1, SPRING) }],
     };
   });
 
   return (
-    <Animated.View style={[styles.row, { height: rowHeight }, style]}>
-      <GestureDetector gesture={gesture}>
-        <View style={styles.fill}>{children}</View>
-      </GestureDetector>
+    <Animated.View style={[styles.row, { height: rowHeight }, rowStyle]}>
+      <View style={styles.inner}>
+        {enabled ? (
+          <GestureDetector gesture={gesture}>
+            <View style={styles.handle} accessibilityLabel="Drag to reorder" accessibilityRole="adjustable">
+              <PlatformIcon
+                sf="line.3.horizontal"
+                ion="reorder-three-outline"
+                size={22}
+                color={colors.textSecondary}
+              />
+            </View>
+          </GestureDetector>
+        ) : null}
+        <View style={styles.content}>{children}</View>
+      </View>
     </Animated.View>
   );
 }
@@ -179,7 +197,18 @@ const styles = StyleSheet.create({
   row: {
     justifyContent: "center",
   },
-  fill: {
+  inner: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  handle: {
+    width: HANDLE_WIDTH,
+    alignSelf: "stretch",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingRight: spacing.xxs,
+  },
+  content: {
     flex: 1,
   },
 });

@@ -1,14 +1,11 @@
 import { useMemo, useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { ScrollWheel } from "@/components/ui/ScrollWheel";
+import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
 import type { AgendaItem } from "@/domain/agenda";
 import { validateTimeRange } from "@/domain/timeRange";
 import { formatClock } from "@/lib/today";
 import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
-
-const HOURS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0"));
-const MINUTES = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, "0"));
 
 export type TimeEditModalProps = {
   visible: boolean;
@@ -17,36 +14,16 @@ export type TimeEditModalProps = {
   onClose: () => void;
 };
 
-function splitClock(iso: string | null, fallback: string): [string, string] {
-  const value = iso ? formatClock(iso) : fallback;
-  const [h, m] = value.split(":");
-  return [h, m];
-}
-
 /** The square time picker from edit mode (blueprint/01 section 3.4). */
 export function TimeEditModal({ visible, item, onSave, onClose }: TimeEditModalProps) {
-  const [startH0, startM0] = splitClock(item.startsAt, "09:00");
-  const [endH0, endM0] = splitClock(item.endsAt, "10:00");
-
-  const [field, setField] = useState<"start" | "end">("start");
-  const [startH, setStartH] = useState(startH0);
-  const [startM, setStartM] = useState(startM0);
-  const [endH, setEndH] = useState(endH0);
-  const [endM, setEndM] = useState(endM0);
+  const [start, setStart] = useState(item.startsAt ? formatClock(item.startsAt) : "09:00");
+  const [end, setEnd] = useState(item.endsAt ? formatClock(item.endsAt) : "10:00");
   const [confirmMidnight, setConfirmMidnight] = useState(false);
-
-  const start = `${startH}:${startM}`;
-  const end = `${endH}:${endM}`;
 
   const result = useMemo(
     () => validateTimeRange({ date: item.date, start, end, crossesMidnight: confirmMidnight }),
     [item.date, start, end, confirmMidnight],
   );
-
-  const hour = field === "start" ? startH : endH;
-  const minute = field === "start" ? startM : endM;
-  const setHour = field === "start" ? setStartH : setEndH;
-  const setMinute = field === "start" ? setStartM : setEndM;
 
   function save() {
     if (result.valid) {
@@ -58,6 +35,7 @@ export function TimeEditModal({ visible, item, onSave, onClose }: TimeEditModalP
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
+        <Pressable style={StyleSheet.absoluteFill} accessibilityLabel="Close" onPress={onClose} />
         <View style={styles.card}>
           <Pressable
             onPress={onClose}
@@ -69,43 +47,14 @@ export function TimeEditModal({ visible, item, onSave, onClose }: TimeEditModalP
             <Text style={styles.closeText}>✕</Text>
           </Pressable>
 
-          <View style={styles.toggle}>
-            {(["start", "end"] as const).map((option) => (
-              <Pressable
-                key={option}
-                onPress={() => setField(option)}
-                style={[styles.toggleButton, field === option && styles.toggleButtonActive]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: field === option }}
-              >
-                <Text style={[styles.toggleText, field === option && styles.toggleTextActive]}>
-                  {option === "start" ? "Start time" : "End time"}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          <Text style={styles.heading}>Time</Text>
 
-          <Text style={styles.preview}>
-            {start} – {end}
-          </Text>
-
-          <View style={styles.wheels}>
-            <ScrollWheel
-              key={`hour-${field}`}
-              values={HOURS}
-              value={hour}
-              onChange={setHour}
-              accessibilityLabel="Hour"
-            />
-            <Text style={styles.colon}>:</Text>
-            <ScrollWheel
-              key={`minute-${field}`}
-              values={MINUTES}
-              value={minute}
-              onChange={setMinute}
-              accessibilityLabel="Minute"
-            />
-          </View>
+          <TimeRangeWheels
+            start={start}
+            end={end}
+            onChangeStart={setStart}
+            onChangeEnd={setEnd}
+          />
 
           {!result.valid && result.requiresCrossMidnightConfirmation ? (
             <Pressable
@@ -145,7 +94,6 @@ const styles = StyleSheet.create({
   card: {
     width: "100%",
     maxWidth: 340,
-    aspectRatio: 0.92,
     backgroundColor: colors.surface,
     borderRadius: radius.large,
     padding: spacing.lg,
@@ -163,44 +111,11 @@ const styles = StyleSheet.create({
     ...typography.heading,
     color: colors.textSecondary,
   },
-  toggle: {
-    flexDirection: "row",
-    backgroundColor: colors.mutedSurface,
-    borderRadius: radius.medium,
-    padding: 3,
-    marginTop: spacing.md,
-  },
-  toggleButton: {
-    flex: 1,
-    paddingVertical: spacing.xs,
-    alignItems: "center",
-    borderRadius: radius.small,
-  },
-  toggleButtonActive: {
-    backgroundColor: colors.surface,
-  },
-  toggleText: {
-    ...typography.button,
-    color: colors.textSecondary,
-  },
-  toggleTextActive: {
-    color: colors.text,
-  },
-  preview: {
+  heading: {
     ...typography.heading,
     color: colors.text,
     textAlign: "center",
-  },
-  wheels: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-  },
-  colon: {
-    ...typography.title,
-    color: colors.text,
+    marginTop: spacing.sm,
   },
   midnight: {
     backgroundColor: colors.mutedSurface,

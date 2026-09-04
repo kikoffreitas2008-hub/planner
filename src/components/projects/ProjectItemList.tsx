@@ -64,7 +64,7 @@ export function ProjectItemList({
             <Text style={styles.link}>Sort by importance</Text>
           </Pressable>
         ) : (
-          <Text style={styles.hint}>Long-press a row to reorder</Text>
+          <Text style={styles.hint}>Drag the handle to reorder</Text>
         )}
       </View>
 
@@ -78,14 +78,12 @@ export function ProjectItemList({
           rowHeight={rowHeight}
           onReorder={(orderedIds) => projectItems.applyOrder(project.id, orderedIds)}
           renderItem={(item) => (
-            <View style={{ paddingBottom: ROW_GAP }}>
-              <ProjectItemRow
-                item={item}
-                layout={table ? "table" : "compact"}
-                onOpen={() => openItem(item)}
-                subtaskCount={subtaskCounts?.[item.id]}
-              />
-            </View>
+            <ProjectItemRow
+              item={item}
+              layout={table ? "table" : "compact"}
+              onOpen={() => openItem(item)}
+              subtaskCount={subtaskCounts?.[item.id]}
+            />
           )}
         />
       )}

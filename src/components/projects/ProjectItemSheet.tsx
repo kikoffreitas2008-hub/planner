@@ -17,6 +17,8 @@ import {
   importanceColor,
   importanceLabel,
 } from "@/components/projects/ImportancePicker";
+import { DatePickerCalendar } from "@/components/ui/DatePickerCalendar";
+import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
 import { projectItems } from "@/data/repositories";
 import { offerUndo } from "@/data/undoBar";
 import type { ISODate } from "@/domain/date";
@@ -168,35 +170,21 @@ export function ProjectItemSheet({ item, onClose }: ProjectItemSheetProps) {
 
             {scheduled ? (
               <View style={styles.scheduleBox}>
-                <TextInput
-                  value={date}
-                  onChangeText={setDate}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={colors.textSecondary}
-                  autoCapitalize="none"
-                  style={styles.input}
+                <DatePickerCalendar
+                  value={/^\d{4}-\d{2}-\d{2}$/.test(date) ? (date as ISODate) : null}
+                  onChange={setDate}
                 />
                 <View style={styles.switchRow}>
                   <Text style={styles.fieldLabel}>All day</Text>
                   <Switch value={allDay} onValueChange={setAllDay} />
                 </View>
                 {!allDay ? (
-                  <View style={styles.inlineRow}>
-                    <TextInput
-                      value={start}
-                      onChangeText={setStart}
-                      placeholder="09:00"
-                      placeholderTextColor={colors.textSecondary}
-                      style={[styles.input, styles.inlineField]}
-                    />
-                    <TextInput
-                      value={end}
-                      onChangeText={setEnd}
-                      placeholder="10:00"
-                      placeholderTextColor={colors.textSecondary}
-                      style={[styles.input, styles.inlineField]}
-                    />
-                  </View>
+                  <TimeRangeWheels
+                    start={start}
+                    end={end}
+                    onChangeStart={setStart}
+                    onChangeEnd={setEnd}
+                  />
                 ) : null}
                 {!schedule.ok && schedule.needsMidnight ? (
                   <Pressable

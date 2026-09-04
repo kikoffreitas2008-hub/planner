@@ -11,6 +11,8 @@ import {
 } from "react-native";
 
 import { ColorDot } from "@/components/ui/ColorDot";
+import { DatePickerCalendar } from "@/components/ui/DatePickerCalendar";
+import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
 import type { AgendaItem } from "@/domain/agenda";
 import type { ISODate } from "@/domain/date";
 import type { PaletteColor } from "@/domain/entities";
@@ -154,13 +156,9 @@ export function AgendaFormModal({
             </Field>
 
             <Field label="Date">
-              <TextInput
-                value={date}
-                onChangeText={setDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={colors.textSecondary}
-                autoCapitalize="none"
-                style={styles.input}
+              <DatePickerCalendar
+                value={/^\d{4}-\d{2}-\d{2}$/.test(date) ? (date as ISODate) : null}
+                onChange={setDate}
               />
             </Field>
 
@@ -170,26 +168,12 @@ export function AgendaFormModal({
             </View>
 
             {!allDay ? (
-              <View style={styles.timeRow}>
-                <Field label="Start" style={styles.timeField}>
-                  <TextInput
-                    value={start}
-                    onChangeText={setStart}
-                    placeholder="09:00"
-                    placeholderTextColor={colors.textSecondary}
-                    style={styles.input}
-                  />
-                </Field>
-                <Field label="End" style={styles.timeField}>
-                  <TextInput
-                    value={end}
-                    onChangeText={setEnd}
-                    placeholder="10:00"
-                    placeholderTextColor={colors.textSecondary}
-                    style={styles.input}
-                  />
-                </Field>
-              </View>
+              <TimeRangeWheels
+                start={start}
+                end={end}
+                onChangeStart={setStart}
+                onChangeEnd={setEnd}
+              />
             ) : null}
 
             {!allDay && !validation.ok && validation.needsMidnight ? (
