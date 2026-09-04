@@ -1,64 +1,75 @@
-# Supabase setup for Planner sync
+# Turning on sync — step by step
 
-The app runs fully local until these steps are done. Nothing here needs a paid
-plan (Supabase free tier + Brevo free SMTP).
+The app runs fully local until this is done. Everything here is free
+(Supabase free tier + Brevo free SMTP). Project: `pillcmhgwgzvmhlcvmwh`.
 
-## 1. Credentials
+---
 
-`.env` (gitignored) already points at the existing project:
+## 1 · Schema + RLS  (2 min, dashboard only)
+
+1. https://supabase.com/dashboard → project **pillcmhgwgzvmhlcvmwh** → **SQL Editor** → **New query**.
+2. Open `supabase/schema.sql` in this repo, copy the whole file, paste, **Run**.
+3. It drops the old PowerSync tables and recreates 9 tables
+   (`user_settings`, `projects`, `project_items`, `calendar_items`,
+   `recurrence_exceptions`, `routine_lists`, `routine_items`,
+   `remember_items`, `sync_tombstones`), each `id / user_id / updated_at /
+   deleted_at / data(jsonb)`, with `owner_all` RLS and realtime.
+4. Check: **Table Editor** shows the 9 tables; **Authentication → Policies**
+   shows one policy per table.
+
+## 2 · Email 6-digit code  (3 min, dashboard only)
+
+1. **Authentication → Sign In / Providers → Email**: enabled = on;
+   "Confirm email" = **off** (OTP verifies by itself).
+2. **Authentication → Emails → Templates → Magic Link**: replace the body
+   with something that includes the token, e.g.
+
+   ```
+   Your Planner code is {{ .Token }}
+   ```
+
+   (Supabase sends this same template for `signInWithOtp`; `{{ .Token }}` is
+   the 6-digit code.)
+3. **Project Settings → Authentication → SMTP Settings**: enable custom
+   SMTP. Brevo (free, 300/day):
+   - Host `smtp-relay.brevo.com`, Port `587`
+   - User = your Brevo login, Password = a Brevo **SMTP key**
+     (Brevo dashboard → SMTP & API → SMTP)
+   - Sender = an address you verified in Brevo
+   The built-in sender caps at 2 emails/hour — not usable.
+
+   You can skip SMTP for the very first test if you sign in with the same
+   email you use for the Supabase account (the built-in 2/hour is enough
+   for one try), but set Brevo up before real use.
+
+## 3 · Account-deletion function  (needs the Supabase CLI)
+
+In a terminal (use `! <command>` in this session so the output lands here):
 
 ```
-EXPO_PUBLIC_SUPABASE_URL=https://pillcmhgwgzvmhlcvmwh.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
-```
-
-Only the **publishable / anon** key belongs here. The service-role key stays on
-the server (step 4).
-
-## 2. Schema + RLS
-
-Supabase dashboard → **SQL Editor** → paste and run `supabase/schema.sql`.
-
-It creates nine tables (`user_settings`, `projects`, `project_items`,
-`calendar_items`, `recurrence_exceptions`, `routine_lists`, `routine_items`,
-`remember_items`, `sync_tombstones`), each with `id / user_id / updated_at /
-deleted_at / data(jsonb)`, RLS `user_id = auth.uid()` on every one, and a
-realtime publication.
-
-The old PowerSync tables can be left alone or dropped — the app only touches
-the nine above.
-
-## 3. Email 6-digit code sign-in
-
-Dashboard → **Authentication → Providers → Email**: enable, keep
-"Confirm email" off (OTP does its own check).
-
-Dashboard → **Authentication → Email Templates → Magic Link** (this template is
-reused for the code): make sure the body contains `{{ .Token }}` — e.g.
-
-```
-Your Planner code is {{ .Token }}
-```
-
-Dashboard → **Project Settings → Auth → SMTP**: turn on custom SMTP and point it
-at Brevo (free tier, 300 emails/day). The built-in sender caps at 2/hour and is
-not usable.
-
-## 4. Account deletion function
-
-```
+npm i -g supabase
+supabase login                       # opens a browser
+supabase link --project-ref pillcmhgwgzvmhlcvmwh
 supabase functions deploy delete-account
 supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<service-role key>
 ```
 
-`SUPABASE_URL` and `SUPABASE_ANON_KEY` are provided to functions automatically.
+The service-role key is in **Project Settings → API → Project API keys →
+`service_role` (secret)**. It goes only into Supabase secrets, never `.env`.
 
-## 5. Verify by hand (blueprint/03 §4)
+This step is optional for now — everything except "Delete account" works
+without it.
 
-- Two browsers, same account: a change in one shows in the other within a
-  second.
-- One browser offline (DevTools → Network → Offline): make edits, go back
-  online — nothing is lost, both converge.
-- Sign in with account A, create a row, sign out, sign in with account B —
-  A's row is **not** visible (RLS).
-- Delete account from Settings — rows gone, sign-in returns to the code screen.
+---
+
+## 4 · Verify (the M4 "done when")
+
+1. `npm run web`, open two browser windows at the app.
+2. Settings (profile button on Today) → **Sign in to sync** → your email →
+   the 6-digit code → back.
+3. Do the same in the second window with the **same** email.
+4. Create a to-do in window A → it appears in window B within ~1 s.
+5. DevTools → Network → **Offline** in window A, edit a few things, go back
+   **Online** — nothing lost, both windows match.
+6. Sign out, sign in with a **different** email — window A's data is not
+   visible (RLS working).
