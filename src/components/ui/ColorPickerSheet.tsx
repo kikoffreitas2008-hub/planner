@@ -29,13 +29,15 @@ export function ColorPickerSheet({ visible, value, onPick, onClose }: ColorPicke
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        style={styles.backdrop}
-        onPress={() => {
-          onPick(openedWith.current);
-          onClose();
-        }}
-      >
+      <View style={styles.backdrop}>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          accessibilityLabel="Close without keeping the change"
+          onPress={() => {
+            onPick(openedWith.current);
+            onClose();
+          }}
+        />
         <View style={styles.card}>
           <View style={styles.header}>
             <Text style={styles.title}>Colour</Text>
@@ -71,7 +73,7 @@ export function ColorPickerSheet({ visible, value, onPick, onClose }: ColorPicke
             <Text style={styles.doneText}>Done</Text>
           </Pressable>
         </View>
-      </Pressable>
+      </View>
     </Modal>
   );
 }

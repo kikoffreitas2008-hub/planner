@@ -24,7 +24,12 @@ export function PlusMenu({ options }: { options: readonly PlusMenuOption[] }) {
         onPress={() => setOpen(true)}
       />
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
+        <View style={styles.root}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            accessibilityLabel="Dismiss menu"
+            onPress={() => setOpen(false)}
+          />
           <View style={styles.menu}>
             {options.map((option) => (
               <Pressable
@@ -43,14 +48,14 @@ export function PlusMenu({ options }: { options: readonly PlusMenuOption[] }) {
               </Pressable>
             ))}
           </View>
-        </Pressable>
+        </View>
       </Modal>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
+  root: {
     flex: 1,
     alignItems: "flex-end",
     paddingTop: 96,

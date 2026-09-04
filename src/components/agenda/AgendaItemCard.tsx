@@ -47,17 +47,19 @@ export function AgendaItemCard({
 
   return (
     <GlossyCard color={item.color} size="task" style={done && styles.doneCard}>
-      <Pressable
-        onPress={onEdit}
-        onLongPress={() => setMenuOpen((open) => !open)}
-        accessibilityRole="button"
-        accessibilityLabel={`${item.itemKind === "event" ? "Event" : "To-do"}: ${item.title}${
-          done ? ", completed" : ""
-        }`}
-        style={styles.body}
-      >
+      <View style={styles.body}>
         <View style={styles.headerRow}>
-          <View style={styles.titleWrap}>
+          {/* Tapping the title/notes area edits the item; kept separate from the
+              colour, time-capsule and menu controls so no button nests another. */}
+          <Pressable
+            onPress={onEdit}
+            onLongPress={() => setMenuOpen((open) => !open)}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.itemKind === "event" ? "Event" : "To-do"}: ${item.title}${
+              done ? ", completed" : ""
+            }`}
+            style={styles.titleWrap}
+          >
             <View style={styles.kindRow}>
               <PlatformIcon
                 sf={item.itemKind === "event" ? "calendar" : "checkmark.circle"}
@@ -77,7 +79,7 @@ export function AgendaItemCard({
             >
               {item.title}
             </Text>
-          </View>
+          </Pressable>
 
           <View style={styles.timeWrap}>
             {done ? <PlatformIcon sf="checkmark" ion="checkmark" size={16} color={ink} /> : null}
@@ -102,9 +104,11 @@ export function AgendaItemCard({
         </View>
 
         {item.notes ? (
-          <Text style={[styles.notes, { color: ink }]} numberOfLines={3}>
-            {item.notes}
-          </Text>
+          <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel="Edit notes">
+            <Text style={[styles.notes, { color: ink }]} numberOfLines={3}>
+              {item.notes}
+            </Text>
+          </Pressable>
         ) : null}
 
         {menuOpen ? (
@@ -114,7 +118,7 @@ export function AgendaItemCard({
             <MenuAction label="Delete" onPress={onDelete} ink={ink} />
           </View>
         ) : null}
-      </Pressable>
+      </View>
 
       {onChangeColor ? (
         <ColorPickerSheet
