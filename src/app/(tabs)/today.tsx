@@ -5,6 +5,7 @@ import { AgendaSection } from "@/components/agenda/AgendaSection";
 import { OverdueReviewSheet } from "@/components/agenda/OverdueReviewSheet";
 import { RememberSection } from "@/components/remember/RememberSection";
 import { RoutineCard } from "@/components/routine/RoutineCard";
+import { GlobalSearchButton } from "@/components/search/GlobalSearchButton";
 import { SettingsSheet } from "@/components/settings/SettingsSheet";
 import { AppScreen } from "@/components/ui/AppScreen";
 import { Divider } from "@/components/ui/Divider";
@@ -66,6 +67,7 @@ export default function TodayScreen() {
             accessibilityLabel="Profile and settings"
             onPress={() => setSettingsOpen(true)}
           />
+          <GlobalSearchButton />
           <PlusMenu
             options={[
               {

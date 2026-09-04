@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 
 import { AgendaFormModal, type AgendaFormResult } from "@/components/agenda/AgendaFormModal";
 import { MonthGrid } from "@/components/calendar/MonthGrid";
 import { TimelineView } from "@/components/calendar/TimelineView";
 import { AppScreen } from "@/components/ui/AppScreen";
+import { GlobalSearchButton } from "@/components/search/GlobalSearchButton";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { PlusMenu } from "@/components/ui/PlusMenu";
 import { useDayAgenda, useRangeAgenda } from "@/data/agenda";
@@ -32,8 +34,16 @@ type FormState =
 
 export default function CalendarScreen() {
   const defaultView = useUserSettings()?.default_calendar_view ?? "month";
-  const [view, setView] = useState<CalendarView>(defaultView);
-  const [focusDate, setFocusDate] = useState<ISODate>(todayInLisbon());
+  // A search result can deep-link here with ?date=YYYY-MM-DD&view=day.
+  const params = useLocalSearchParams<{ date?: string; view?: string }>();
+  const [view, setView] = useState<CalendarView>(() =>
+    params.view === "day" || params.view === "week" || params.view === "month"
+      ? params.view
+      : defaultView,
+  );
+  const [focusDate, setFocusDate] = useState<ISODate>(() =>
+    params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? (params.date as ISODate) : todayInLisbon(),
+  );
   const [form, setForm] = useState<FormState>(null);
 
   const range = useMemo(() => {
@@ -104,6 +114,7 @@ export default function CalendarScreen() {
               </Pressable>
             ))}
           </View>
+          <GlobalSearchButton />
           <PlusMenu
             options={[
               {

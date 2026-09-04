@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { ArchivedProjectsSheet } from "@/components/projects/ArchivedProjectsSheet";
 import { ProjectCreateSheet } from "@/components/projects/ProjectCreateSheet";
 import { ProjectGrid } from "@/components/projects/ProjectGrid";
+import { GlobalSearchButton } from "@/components/search/GlobalSearchButton";
 import { AppScreen } from "@/components/ui/AppScreen";
 import { RoundIconButton } from "@/components/ui/RoundIconButton";
 import { useActiveProjects, useArchivedProjects } from "@/data/projects";
@@ -35,6 +36,7 @@ export default function ProjectsScreen() {
           >
             <Text style={[styles.toggleText, showProgress && styles.toggleTextOn]}>Progress</Text>
           </Pressable>
+          <GlobalSearchButton />
           <RoundIconButton
             sf="plus"
             ion="add"
