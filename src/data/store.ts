@@ -23,8 +23,17 @@ export function setMutationHandler(handler: ((event: MutationEvent) => void) | n
   mutationHandler = handler;
 }
 
+/** Other observers (notification scheduling, search re-indexing) add themselves here. */
+const mutationListeners = new Set<(event: MutationEvent) => void>();
+
+export function addMutationListener(listener: (event: MutationEvent) => void): () => void {
+  mutationListeners.add(listener);
+  return () => mutationListeners.delete(listener);
+}
+
 function emitMutation(event: MutationEvent, fromSync: boolean): void {
   if (!fromSync) mutationHandler?.(event);
+  for (const listener of mutationListeners) listener(event);
 }
 
 function notify(): void {

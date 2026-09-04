@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { useTable, useUserSettings } from "@/data/store";
+import { getDatabase, useTable, useUserSettings } from "@/data/store";
 import type { AgendaItem } from "@/domain/agenda";
 import { compareAgendaItems } from "@/domain/agenda";
 import type { ISODate } from "@/domain/date";
@@ -232,4 +232,32 @@ export function useRangeAgenda(start: ISODate, end: ISODate): readonly AgendaIte
     }
     return [...unique.values()].sort(compareAgendaItems);
   }, [calendarItems, projectItems, projectsById, exceptions, start, end]);
+}
+
+/**
+ * The same range merge as `useRangeAgenda`, as a plain (non-hook) read of the
+ * current store — for callers outside React: notification scheduling,
+ * export, search indexing.
+ */
+export function snapshotRangeAgenda(start: ISODate, end: ISODate): AgendaItem[] {
+  const db = getDatabase();
+  const dates = eachDate(start, end);
+  const exList = activeExceptions(db.recurrence_exceptions);
+  const inRange = (date: string) => date >= start && date <= end;
+
+  const fromCalendar = Object.values(db.calendar_items).flatMap((item) =>
+    dates.flatMap((date) => expandForDate(item, date, exList)),
+  );
+  const fromProjects = Object.values(db.project_items).flatMap((item) => {
+    if (item.deleted_at || !item.scheduled_date || !inRange(item.scheduled_date)) return [];
+    const project = db.projects[item.project_id];
+    if (!project || project.deleted_at) return [];
+    return [projectItemAgendaItem(item, project)];
+  });
+
+  const unique = new Map<string, AgendaItem>();
+  for (const item of [...fromCalendar, ...fromProjects]) {
+    if (!item.deletedAt && !unique.has(item.occurrenceId)) unique.set(item.occurrenceId, item);
+  }
+  return [...unique.values()].sort(compareAgendaItems);
 }

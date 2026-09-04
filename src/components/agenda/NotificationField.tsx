@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { PickerField } from "@/components/ui/PickerField";
+import { requestNotificationPermission } from "@/data/notifications";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
 
 const OPTIONS: { minutes: number; label: string }[] = [
@@ -28,7 +29,7 @@ function parse(value: string | null): number[] {
   }
 }
 
-/** Off by default, opt-in per item (blueprint/01 §6.2). Alerts are scheduled in M5. */
+/** Off by default, opt-in per item (blueprint/01 §6.2). */
 export function NotificationField({ value, onChange }: NotificationFieldProps) {
   const selected = parse(value);
   const summary =
@@ -41,10 +42,15 @@ export function NotificationField({ value, onChange }: NotificationFieldProps) {
           .join(", ");
 
   function toggle(minutes: number) {
+    const wasOff = selected.length === 0;
     const next = selected.includes(minutes)
       ? selected.filter((m) => m !== minutes)
       : [...selected, minutes];
     onChange(next.length ? JSON.stringify(next.sort((a, b) => a - b)) : null);
+    // The permission prompt appears only in response to setting an alert,
+    // never at launch (blueprint/01 §6.2). The schedule itself refreshes once
+    // this change is actually saved (a store-mutation listener handles that).
+    if (wasOff && next.length > 0) void requestNotificationPermission();
   }
 
   return (
