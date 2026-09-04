@@ -18,13 +18,14 @@ import {
   importanceLabel,
 } from "@/components/projects/ImportancePicker";
 import { DatePickerCalendar } from "@/components/ui/DatePickerCalendar";
+import { PickerField } from "@/components/ui/PickerField";
 import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
 import { projectItems } from "@/data/repositories";
 import { offerUndo } from "@/data/undoBar";
 import type { ISODate } from "@/domain/date";
 import type { ProjectItem } from "@/domain/entities";
 import { validateTimeRange } from "@/domain/timeRange";
-import { formatClock } from "@/lib/today";
+import { formatClock, formatDMY } from "@/lib/today";
 import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
 
 export type ProjectItemSheetProps = {
@@ -170,21 +171,29 @@ export function ProjectItemSheet({ item, onClose }: ProjectItemSheetProps) {
 
             {scheduled ? (
               <View style={styles.scheduleBox}>
-                <DatePickerCalendar
-                  value={/^\d{4}-\d{2}-\d{2}$/.test(date) ? (date as ISODate) : null}
-                  onChange={setDate}
-                />
+                <PickerField
+                  label="Day"
+                  value={/^\d{4}-\d{2}-\d{2}$/.test(date) ? formatDMY(date as ISODate) : ""}
+                  placeholder="Choose a day"
+                >
+                  <DatePickerCalendar
+                    value={/^\d{4}-\d{2}-\d{2}$/.test(date) ? (date as ISODate) : null}
+                    onChange={setDate}
+                  />
+                </PickerField>
                 <View style={styles.switchRow}>
                   <Text style={styles.fieldLabel}>All day</Text>
                   <Switch value={allDay} onValueChange={setAllDay} />
                 </View>
                 {!allDay ? (
-                  <TimeRangeWheels
-                    start={start}
-                    end={end}
-                    onChangeStart={setStart}
-                    onChangeEnd={setEnd}
-                  />
+                  <PickerField label="Time" value={`${start} – ${end}`}>
+                    <TimeRangeWheels
+                      start={start}
+                      end={end}
+                      onChangeStart={setStart}
+                      onChangeEnd={setEnd}
+                    />
+                  </PickerField>
                 ) : null}
                 {!schedule.ok && schedule.needsMidnight ? (
                   <Pressable

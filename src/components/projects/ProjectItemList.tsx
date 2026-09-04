@@ -33,7 +33,7 @@ export function ProjectItemList({
 }: ProjectItemListProps) {
   const { width } = useWindowDimensions();
   const table = width >= 720;
-  const rowHeight = (table ? ROW_HEIGHT_TABLE : ROW_HEIGHT_COMPACT) + ROW_GAP;
+  const estimatedRowHeight = (table ? ROW_HEIGHT_TABLE : ROW_HEIGHT_COMPACT) + ROW_GAP;
 
   const [draft, setDraft] = useState("");
   const [sheetItem, setSheetItem] = useState<ProjectItem | null>(null);
@@ -75,15 +75,17 @@ export function ProjectItemList({
       ) : (
         <DraggableColumn
           data={items}
-          rowHeight={rowHeight}
+          estimatedRowHeight={estimatedRowHeight}
           onReorder={(orderedIds) => projectItems.applyOrder(project.id, orderedIds)}
           renderItem={(item) => (
-            <ProjectItemRow
-              item={item}
-              layout={table ? "table" : "compact"}
-              onOpen={() => openItem(item)}
-              subtaskCount={subtaskCounts?.[item.id]}
-            />
+            <View style={{ paddingBottom: ROW_GAP }}>
+              <ProjectItemRow
+                item={item}
+                layout={table ? "table" : "compact"}
+                onOpen={() => openItem(item)}
+                subtaskCount={subtaskCounts?.[item.id]}
+              />
+            </View>
           )}
         />
       )}

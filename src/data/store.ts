@@ -45,24 +45,27 @@ export function flush(): void {
 function seed(base: Database): Database {
   const localUserId = base.meta.localUserId || createClientId();
   const now = new Date().toISOString();
+  const defaults = {
+    id: createClientId(),
+    user_id: localUserId,
+    created_at: now,
+    updated_at: now,
+    deleted_at: null,
+    time_zone: "Europe/Lisbon" as const,
+    last_overdue_review_date: null,
+    week_starts_on: 1 as const,
+    notifications_enabled: false,
+    project_progress_visible: true,
+    reduce_motion: false,
+    default_calendar_view: "month" as const,
+    calendar_visible_anchor: null,
+    today_manual_dates: "[]",
+  };
   return {
     ...base,
     meta: { ...base.meta, localUserId },
-    user_settings: base.user_settings ?? {
-      id: createClientId(),
-      user_id: localUserId,
-      created_at: now,
-      updated_at: now,
-      deleted_at: null,
-      time_zone: "Europe/Lisbon",
-      last_overdue_review_date: null,
-      week_starts_on: 1,
-      notifications_enabled: false,
-      project_progress_visible: true,
-      reduce_motion: false,
-      default_calendar_view: "month",
-      calendar_visible_anchor: null,
-    },
+    // Merge so a database saved before a settings field existed gets the default.
+    user_settings: { ...defaults, ...(base.user_settings ?? {}) },
   };
 }
 

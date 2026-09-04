@@ -2,12 +2,13 @@ import { useMemo, useState } from "react";
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { DatePickerCalendar } from "@/components/ui/DatePickerCalendar";
+import { PickerField } from "@/components/ui/PickerField";
 import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
 import { calendarItems, settings } from "@/data/repositories";
 import type { AgendaItem } from "@/domain/agenda";
 import type { ISODate } from "@/domain/date";
 import { validateOverdueReschedule } from "@/domain/overdue";
-import { formatClock, formatDayHeading } from "@/lib/today";
+import { formatClock, formatDayHeading, formatDMY } from "@/lib/today";
 import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
 
 export type OverdueReviewSheetProps = {
@@ -109,12 +110,19 @@ function OverdueRow({ item, onResolved }: { item: AgendaItem; onResolved: () => 
         </View>
       ) : (
         <View style={styles.reschedule}>
-          <Text style={styles.rowMeta}>Pick a new day and time</Text>
-          <DatePickerCalendar
-            value={/^\d{4}-\d{2}-\d{2}$/.test(date) ? (date as ISODate) : null}
-            onChange={setDate}
-          />
-          <TimeRangeWheels start={start} end={end} onChangeStart={setStart} onChangeEnd={setEnd} />
+          <PickerField
+            label="Day"
+            value={/^\d{4}-\d{2}-\d{2}$/.test(date) ? formatDMY(date as ISODate) : ""}
+            placeholder="Choose a day"
+          >
+            <DatePickerCalendar
+              value={/^\d{4}-\d{2}-\d{2}$/.test(date) ? (date as ISODate) : null}
+              onChange={setDate}
+            />
+          </PickerField>
+          <PickerField label="Time" value={`${start} – ${end}`}>
+            <TimeRangeWheels start={start} end={end} onChangeStart={setStart} onChangeEnd={setEnd} />
+          </PickerField>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <View style={styles.actions}>
             <Action label="Confirm" onPress={confirmReschedule} primary />

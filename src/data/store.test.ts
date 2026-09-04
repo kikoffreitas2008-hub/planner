@@ -108,3 +108,25 @@ test("marking the overdue review stores today's date in settings", () => {
   settings.markOverdueReviewed("2026-09-04");
   assert.equal(getDatabase().user_settings?.last_overdue_review_date, "2026-09-04");
 });
+
+test("setDayManualOrder toggles a date in and out of the manual set", () => {
+  settings.setDayManualOrder("2026-09-04", true);
+  assert.deepEqual(JSON.parse(getDatabase().user_settings?.today_manual_dates ?? "[]"), ["2026-09-04"]);
+  settings.setDayManualOrder("2026-09-05", true);
+  assert.equal(
+    JSON.parse(getDatabase().user_settings?.today_manual_dates ?? "[]").length,
+    2,
+  );
+  settings.setDayManualOrder("2026-09-04", false);
+  assert.deepEqual(JSON.parse(getDatabase().user_settings?.today_manual_dates ?? "[]"), ["2026-09-05"]);
+});
+
+test("routine.applyOrder rewrites items into the given order", () => {
+  const list = routine.ensureDefaultList();
+  const a = routine.addItem(list.id, "a");
+  const b = routine.addItem(list.id, "b");
+  const c = routine.addItem(list.id, "c");
+  routine.applyOrder([c.id, a.id, b.id]);
+  const key = (id: string) => getDatabase().routine_items[id].manual_sort_key;
+  assert.ok(key(c.id) < key(a.id) && key(a.id) < key(b.id));
+});

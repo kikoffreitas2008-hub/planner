@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 
-import { useTable } from "@/data/store";
+import { useTable, useUserSettings } from "@/data/store";
 import type { AgendaItem } from "@/domain/agenda";
-import { prepareAgenda } from "@/domain/agenda";
+import { compareAgendaItems } from "@/domain/agenda";
 import type { ISODate } from "@/domain/date";
 import type { CalendarItem, Project, ProjectItem } from "@/domain/entities";
 import { occurrencesForDate, type RecurrenceRule, type RecurringSource } from "@/domain/recurrence";
@@ -46,6 +46,7 @@ function baseAgendaItem(item: CalendarItem): Omit<AgendaItem, "date" | "occurren
     deletedAt: item.deleted_at,
     itemKind: item.item_type,
     location: item.item_type === "event" ? item.location : null,
+    manualSortKey: item.manual_sort_key,
     notes: item.notes,
     notificationOffsets: parseOffsets(item.notification_offsets),
     origin: { kind: "calendar", id: item.id },
@@ -107,6 +108,7 @@ export function projectItemAgendaItem(item: ProjectItem, project: Project): Agen
     endsAt: item.scheduled_ends_at,
     itemKind: "task",
     location: null,
+    manualSortKey: item.manual_sort_key,
     notes: item.notes,
     occurrenceId: item.id,
     origin: {
@@ -127,10 +129,33 @@ export function projectItemAgendaItem(item: ProjectItem, project: Project): Agen
  * (blueprint/04 section 3). Nothing is copied — an edit writes back to the
  * record the entry came from.
  */
+function dayGroup(item: AgendaItem): number {
+  if (!item.completedAt) return item.allDay ? 0 : 1;
+  return item.allDay ? 2 : 3;
+}
+
+/** Manual order: same grouping as the default, but the middle is by drag key. */
+function compareManual(left: AgendaItem, right: AgendaItem): number {
+  const groupDiff = dayGroup(left) - dayGroup(right);
+  if (groupDiff) return groupDiff;
+  const keyDiff = (left.manualSortKey ?? "").localeCompare(right.manualSortKey ?? "");
+  if (keyDiff) return keyDiff;
+  return left.createdAt.localeCompare(right.createdAt) || left.occurrenceId.localeCompare(right.occurrenceId);
+}
+
 export function useDayAgenda(date: ISODate): readonly AgendaItem[] {
   const calendarItems = useTable("calendar_items");
   const projectItems = useTable("project_items");
   const projectsById = useTable("projects");
+  const manualDatesJson = useUserSettings()?.today_manual_dates ?? "[]";
+
+  const manualToday = useMemo(() => {
+    try {
+      return new Set<string>(JSON.parse(manualDatesJson));
+    } catch {
+      return new Set<string>();
+    }
+  }, [manualDatesJson]);
 
   return useMemo(() => {
     const fromCalendar = Object.values(calendarItems).flatMap((item) => expandForDate(item, date));
@@ -140,6 +165,13 @@ export function useDayAgenda(date: ISODate): readonly AgendaItem[] {
       if (!project || project.deleted_at) return [];
       return [projectItemAgendaItem(item, project)];
     });
-    return prepareAgenda([...fromCalendar, ...fromProjects]);
-  }, [calendarItems, projectItems, projectsById, date]);
+
+    const merged = [...fromCalendar, ...fromProjects];
+    const unique = new Map<string, AgendaItem>();
+    for (const item of merged) {
+      if (!item.deletedAt && !unique.has(item.occurrenceId)) unique.set(item.occurrenceId, item);
+    }
+    const list = [...unique.values()];
+    return manualToday.has(date) ? list.sort(compareManual) : list.sort(compareAgendaItems);
+  }, [calendarItems, projectItems, projectsById, date, manualToday]);
 }

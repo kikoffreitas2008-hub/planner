@@ -12,12 +12,13 @@ import {
 
 import { ColorDot } from "@/components/ui/ColorDot";
 import { DatePickerCalendar } from "@/components/ui/DatePickerCalendar";
+import { PickerField } from "@/components/ui/PickerField";
 import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
 import type { AgendaItem } from "@/domain/agenda";
 import type { ISODate } from "@/domain/date";
 import type { PaletteColor } from "@/domain/entities";
 import { validateTimeRange } from "@/domain/timeRange";
-import { formatClock } from "@/lib/today";
+import { formatClock, formatDMY } from "@/lib/today";
 import { colors, palette, radius, spacing, typography, type PaletteKey } from "@/theme/tokens";
 
 const PALETTE_KEYS = Object.keys(palette) as PaletteKey[];
@@ -155,12 +156,16 @@ export function AgendaFormModal({
               />
             </Field>
 
-            <Field label="Date">
+            <PickerField
+              label="Date"
+              value={/^\d{4}-\d{2}-\d{2}$/.test(date) ? formatDMY(date as ISODate) : ""}
+              placeholder="Choose a day"
+            >
               <DatePickerCalendar
                 value={/^\d{4}-\d{2}-\d{2}$/.test(date) ? (date as ISODate) : null}
                 onChange={setDate}
               />
-            </Field>
+            </PickerField>
 
             <View style={styles.switchRow}>
               <Text style={styles.fieldLabel}>All day</Text>
@@ -168,12 +173,14 @@ export function AgendaFormModal({
             </View>
 
             {!allDay ? (
-              <TimeRangeWheels
-                start={start}
-                end={end}
-                onChangeStart={setStart}
-                onChangeEnd={setEnd}
-              />
+              <PickerField label="Time" value={`${start} – ${end}`}>
+                <TimeRangeWheels
+                  start={start}
+                  end={end}
+                  onChangeStart={setStart}
+                  onChangeEnd={setEnd}
+                />
+              </PickerField>
             ) : null}
 
             {!allDay && !validation.ok && validation.needsMidnight ? (

@@ -12,6 +12,7 @@ export interface AgendaItem {
   endsAt: ISODateTime | null;
   itemKind: "task" | "event";
   location?: string | null;
+  manualSortKey?: string;
   notes: string | null;
   notificationOffsets?: readonly number[];
   occurrenceId: string;

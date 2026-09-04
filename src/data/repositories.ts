@@ -171,6 +171,15 @@ export const routine = {
     for (const item of items) touch("routine_items", item.id, { completed_at: null });
   },
 
+  applyOrder(orderedIds: readonly string[]): void {
+    let previous: string | null = null;
+    for (const id of orderedIds) {
+      const key = generateKeyBetween(previous, null);
+      touch("routine_items", id, { manual_sort_key: key });
+      previous = key;
+    }
+  },
+
   softDeleteItem(id: string): void {
     touch("routine_items", id, { deleted_at: nowISO() });
   },
@@ -383,5 +392,20 @@ export const settings = {
 
   markOverdueReviewed(date: ISODate): void {
     settings.update({ last_overdue_review_date: date });
+  },
+
+  setDayManualOrder(date: ISODate, manual: boolean): void {
+    const current = getDatabase().user_settings;
+    if (!current) return;
+    let dates: string[];
+    try {
+      dates = JSON.parse(current.today_manual_dates || "[]");
+    } catch {
+      dates = [];
+    }
+    const next = new Set(dates);
+    if (manual) next.add(date);
+    else next.delete(date);
+    settings.update({ today_manual_dates: JSON.stringify([...next]) });
   },
 };

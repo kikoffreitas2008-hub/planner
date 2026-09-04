@@ -41,6 +41,17 @@ export function formatDayHeading(date: ISODate): string {
   return `${weekday} · ${dmy}`;
 }
 
+/** "04/09/2026" for an ISO date (dd/mm/yyyy). */
+export function formatDMY(date: ISODate): string {
+  const at = new Date(`${date}T12:00:00.000Z`);
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: TIME_ZONE,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(at);
+}
+
 /** "09:00" for an ISO timestamp, in Lisbon 24-hour time. */
 export function formatClock(iso: string): string {
   return new Intl.DateTimeFormat("en-GB", {

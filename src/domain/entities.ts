@@ -27,6 +27,8 @@ export interface UserSettings extends SyncEntity {
   reduce_motion: boolean;
   default_calendar_view: "month" | "week" | "day";
   calendar_visible_anchor: ISODate | null;
+  /** JSON array of dates whose Today list has been manually reordered. */
+  today_manual_dates: string;
 }
 
 interface CalendarItemBase extends SyncEntity {

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { SwipeableRow } from "@/components/agenda/SwipeableRow";
+import { DraggableColumn } from "@/components/projects/DraggableColumn";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { SurfaceCard } from "@/components/ui/SurfaceCard";
 import { routine } from "@/data/repositories";
@@ -73,34 +74,38 @@ export function RoutineCard({ addSignal }: { addSignal: number }) {
       </View>
 
       <View style={styles.list}>
-        {items.map((item) => (
-          <SwipeableRow
-            key={item.id}
-            onSwipeRight={() => routine.setChecked(item.id, !item.completed_at)}
-            onSwipeLeft={() => remove(item.id)}
-            rightLabel={item.completed_at ? "Uncheck" : "Check"}
-          >
-            <View style={styles.row}>
-              <Pressable
-                onPress={() => routine.setChecked(item.id, !item.completed_at)}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: Boolean(item.completed_at) }}
-                accessibilityLabel={item.title}
-                hitSlop={8}
-              >
-                <PlatformIcon
-                  sf={item.completed_at ? "checkmark.circle.fill" : "circle"}
-                  ion={item.completed_at ? "checkmark-circle" : "ellipse-outline"}
-                  size={24}
-                  color={item.completed_at ? colors.text : colors.textSecondary}
-                />
-              </Pressable>
-              <Text style={[styles.itemText, item.completed_at && styles.itemTextDone]}>
-                {item.title}
-              </Text>
-            </View>
-          </SwipeableRow>
-        ))}
+        <DraggableColumn
+          data={items}
+          estimatedRowHeight={44}
+          onReorder={(orderedIds) => routine.applyOrder(orderedIds)}
+          renderItem={(item) => (
+            <SwipeableRow
+              onSwipeRight={() => routine.setChecked(item.id, !item.completed_at)}
+              onSwipeLeft={() => remove(item.id)}
+              rightLabel={item.completed_at ? "Uncheck" : "Check"}
+            >
+              <View style={styles.row}>
+                <Pressable
+                  onPress={() => routine.setChecked(item.id, !item.completed_at)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: Boolean(item.completed_at) }}
+                  accessibilityLabel={item.title}
+                  hitSlop={8}
+                >
+                  <PlatformIcon
+                    sf={item.completed_at ? "checkmark.circle.fill" : "circle"}
+                    ion={item.completed_at ? "checkmark-circle" : "ellipse-outline"}
+                    size={24}
+                    color={item.completed_at ? colors.text : colors.textSecondary}
+                  />
+                </Pressable>
+                <Text style={[styles.itemText, item.completed_at && styles.itemTextDone]}>
+                  {item.title}
+                </Text>
+              </View>
+            </SwipeableRow>
+          )}
+        />
 
         <View style={styles.row}>
           <PlatformIcon
