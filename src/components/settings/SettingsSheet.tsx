@@ -3,6 +3,8 @@ import { Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View 
 
 import { SignInSheet } from "@/components/auth/SignInSheet";
 import { deleteAccount, signOut, useAuth } from "@/data/auth";
+import { exportAndDownloadWeb } from "@/data/export";
+import { refreshNotifications, requestNotificationPermission } from "@/data/notifications";
 import { settings as settingsRepo } from "@/data/repositories";
 import { useUserSettings } from "@/data/store";
 import { syncNow, useSyncStatus } from "@/sync/engine";
@@ -16,6 +18,8 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
   const [signInOpen, setSignInOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const lastSync = status.lastSyncAt
     ? `${status.lastSyncAt.slice(0, 10)} ${formatClock(status.lastSyncAt)}`
@@ -51,6 +55,23 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
               <Row label="Sign in to sync" onPress={() => setSignInOpen(true)} />
             )}
 
+            <Text style={styles.sectionLabel}>Notifications</Text>
+            <View style={styles.switchRow}>
+              <Text style={styles.value}>Notifications</Text>
+              <Switch
+                value={userSettings?.notifications_enabled ?? false}
+                onValueChange={(next) => {
+                  settingsRepo.update({ notifications_enabled: next });
+                  if (next) void requestNotificationPermission().then(() => void refreshNotifications());
+                  else void refreshNotifications();
+                }}
+              />
+            </View>
+            <Text style={styles.meta}>
+              Off by default. Turning an alert on for an item (or this switch) is what asks the
+              system for permission — never at launch.
+            </Text>
+
             <Text style={styles.sectionLabel}>Display</Text>
             <View style={styles.switchRow}>
               <Text style={styles.value}>Project progress visible by default</Text>
@@ -67,7 +88,22 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
               />
             </View>
 
-            <Text style={styles.meta}>Notifications and export arrive in M5.</Text>
+            <Text style={styles.sectionLabel}>Data</Text>
+            <Row
+              label={exporting ? "Preparing export…" : "Export data (.zip)"}
+              onPress={() => {
+                if (Platform.OS !== "web") {
+                  setExportError("Export needs a native build — coming with one.");
+                  return;
+                }
+                setExporting(true);
+                setExportError(null);
+                exportAndDownloadWeb()
+                  .catch((e) => setExportError(e instanceof Error ? e.message : "Export failed."))
+                  .finally(() => setExporting(false));
+              }}
+            />
+            {exportError ? <Text style={styles.error}>{exportError}</Text> : null}
 
             {auth.status === "signed-in" ? (
               confirmDelete ? (
