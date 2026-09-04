@@ -46,9 +46,11 @@ export function RoutineCard({ addSignal }: { addSignal: number }) {
 
   function submitDraft() {
     const title = draft.trim();
-    if (!title || !list) return;
-    routine.addItem(list.id, title);
+    if (!title) return;
+    const target = list ?? routine.ensureDefaultList();
+    routine.addItem(target.id, title);
     setDraft("");
+    inputRef.current?.focus();
   }
 
   function remove(id: string) {
@@ -112,11 +114,17 @@ export function RoutineCard({ addSignal }: { addSignal: number }) {
             value={draft}
             onChangeText={setDraft}
             onSubmitEditing={submitDraft}
+            submitBehavior="submit"
             returnKeyType="done"
             placeholder="Add an item"
             placeholderTextColor={colors.textSecondary}
             style={styles.input}
           />
+          {draft.trim() ? (
+            <Pressable onPress={submitDraft} accessibilityRole="button" style={styles.add}>
+              <Text style={styles.addText}>Add</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
     </SurfaceCard>
@@ -171,4 +179,15 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: spacing.xxs,
   },
+  add: {
+    backgroundColor: colors.text,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xxs,
+  },
+  addText: {
+    ...typography.button,
+    color: colors.surface,
+  },
 });
+

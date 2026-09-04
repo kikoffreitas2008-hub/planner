@@ -1,17 +1,18 @@
 import { useEffect, useRef } from "react";
 import {
-  NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
   Text,
   View,
   type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from "react-native";
 
 import { colors, radius, typography } from "@/theme/tokens";
 
 const ITEM_HEIGHT = 40;
 const VISIBLE = 5;
+const PADDING = ITEM_HEIGHT * ((VISIBLE - 1) / 2);
 
 export type ScrollWheelProps = {
   values: readonly string[];
@@ -23,38 +24,41 @@ export type ScrollWheelProps = {
 /**
  * A native-feeling picker wheel (Apple Calendar style), built from a snapping
  * ScrollView so it works on web and native with no extra dependency.
+ *
+ * The selected value is committed shortly after scrolling settles — driven by
+ * `onScroll`, not momentum-end, because a desktop mouse wheel fires neither a
+ * drag-end nor a momentum-end event on web.
  */
 export function ScrollWheel({ values, value, onChange, accessibilityLabel }: ScrollWheelProps) {
   const ref = useRef<ScrollView>(null);
-  const index = Math.max(0, values.indexOf(value));
 
   useEffect(() => {
-    ref.current?.scrollTo({ y: index * ITEM_HEIGHT, animated: false });
-    // Re-align only when the selected value changes from outside.
+    const index = Math.max(0, values.indexOf(value));
+    const id = setTimeout(() => ref.current?.scrollTo({ y: index * ITEM_HEIGHT, animated: false }), 0);
+    return () => clearTimeout(id);
+    // Position once. The wheel is remounted (via key) when the edited field changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
+  }, []);
 
-  function handleEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
-    const raw = Math.round(event.nativeEvent.contentOffset.y / ITEM_HEIGHT);
-    const clamped = Math.min(values.length - 1, Math.max(0, raw));
-    if (values[clamped] !== value) onChange(values[clamped]);
+  function handleScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const index = Math.min(values.length - 1, Math.max(0, Math.round(offsetY / ITEM_HEIGHT)));
+    if (values[index] !== value) onChange(values[index]);
   }
 
   return (
-    <View
-      style={styles.frame}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole="adjustable"
-    >
+    <View style={styles.frame} accessibilityLabel={accessibilityLabel} accessibilityRole="adjustable">
       <View pointerEvents="none" style={styles.selection} />
       <ScrollView
         ref={ref}
         showsVerticalScrollIndicator={false}
         snapToInterval={ITEM_HEIGHT}
         decelerationRate="fast"
-        onMomentumScrollEnd={handleEnd}
-        onScrollEndDrag={handleEnd}
-        contentContainerStyle={{ paddingVertical: ITEM_HEIGHT * ((VISIBLE - 1) / 2) }}
+        scrollEventThrottle={16}
+        onScroll={handleScroll}
+        onMomentumScrollEnd={handleScroll}
+        onScrollEndDrag={handleScroll}
+        contentContainerStyle={{ paddingVertical: PADDING }}
       >
         {values.map((entry) => (
           <View key={entry} style={styles.item}>
@@ -88,7 +92,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    top: ITEM_HEIGHT * ((VISIBLE - 1) / 2),
+    top: PADDING,
     height: ITEM_HEIGHT,
     borderRadius: radius.small,
     backgroundColor: colors.mutedSurface,

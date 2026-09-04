@@ -90,9 +90,16 @@ export function TimeEditModal({ visible, item, onSave, onClose }: TimeEditModalP
           </Text>
 
           <View style={styles.wheels}>
-            <ScrollWheel values={HOURS} value={hour} onChange={setHour} accessibilityLabel="Hour" />
+            <ScrollWheel
+              key={`hour-${field}`}
+              values={HOURS}
+              value={hour}
+              onChange={setHour}
+              accessibilityLabel="Hour"
+            />
             <Text style={styles.colon}>:</Text>
             <ScrollWheel
+              key={`minute-${field}`}
               values={MINUTES}
               value={minute}
               onChange={setMinute}
