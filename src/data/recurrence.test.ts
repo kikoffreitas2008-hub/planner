@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
 
+import type { CalendarItem } from "../domain/entities.ts";
+
 class MemoryStorage {
   private map = new Map<string, string>();
   getItem(key: string) {
@@ -14,8 +16,6 @@ class MemoryStorage {
   }
 }
 (globalThis as { window?: unknown }).window = { localStorage: new MemoryStorage() };
-
-import type { CalendarItem } from "../domain/entities.ts";
 
 const { getDatabase, resetDatabaseForTests, upsertRow, localUserId } = await import("./store.ts");
 const { mutateRecurringOccurrence } = await import("./recurrence.ts");

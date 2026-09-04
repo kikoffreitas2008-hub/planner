@@ -8,6 +8,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 
+import { markSwipe, swipedRecently } from "@/components/agenda/swipeGuard";
 import { moveAgendaItem, resizeAgendaItem } from "@/data/agendaEdit";
 import type { AgendaItem } from "@/domain/agenda";
 import { weekRange, weekdayLabels } from "@/domain/calendarGrid";
@@ -204,25 +205,36 @@ function TimelineBlock({
   const extraHeight = useSharedValue(0);
   const ink = palette[item.color].ink;
 
+  // Drag the block to move it — the new time is written on drop, no editor.
   const move = Gesture.Pan()
     .enabled(draggable)
-    .activateAfterLongPress(160)
+    .minDistance(6)
+    .failOffsetX([-14, 14])
+    .onBegin(() => {
+      runOnJS(markSwipe)();
+    })
     .onUpdate((event) => {
       moveY.value = event.translationY;
     })
     .onEnd(() => {
       const newTop = Math.max(0, placement.top + moveY.value);
+      runOnJS(markSwipe)();
       runOnJS(moveAgendaItem)(item, date, (newTop / PPH) * 60);
       moveY.value = withSpring(0);
     });
 
   const resize = Gesture.Pan()
     .enabled(draggable)
+    .minDistance(4)
+    .onBegin(() => {
+      runOnJS(markSwipe)();
+    })
     .onUpdate((event) => {
       extraHeight.value = event.translationY;
     })
     .onEnd(() => {
       const newBottom = placement.top + placement.height + extraHeight.value;
+      runOnJS(markSwipe)();
       runOnJS(resizeAgendaItem)(item, (newBottom / PPH) * 60);
       extraHeight.value = withSpring(0);
     });
@@ -238,8 +250,9 @@ function TimelineBlock({
     <Animated.View style={[styles.block, style]}>
       <GestureDetector gesture={move}>
         <Pressable
-          onPress={onOpen}
-          onLongPress={onOpen}
+          onPress={() => {
+            if (!swipedRecently()) onOpen();
+          }}
           style={[styles.blockInner, { backgroundColor: palette[item.color].start }]}
         >
           <Text style={[styles.blockTitle, { color: ink }]} numberOfLines={1}>
