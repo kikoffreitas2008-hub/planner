@@ -97,15 +97,16 @@ export function AgendaSection({
       <View style={styles.headerRow}>
         <Text style={styles.heading}>To-do</Text>
         <View style={styles.controls}>
-          {manualOrdered ? (
-            <Pressable
-              onPress={() => settings.setDayManualOrder(date, false)}
-              accessibilityRole="button"
-              style={styles.controlButton}
-            >
-              <Text style={styles.controlText}>By time</Text>
-            </Pressable>
-          ) : null}
+          <Pressable
+            onPress={() => settings.setDayManualOrder(date, false)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: !manualOrdered }}
+            style={[styles.controlButton, !manualOrdered && styles.controlButtonOn]}
+          >
+            <Text style={[styles.controlText, !manualOrdered && styles.controlTextOn]}>
+              By time
+            </Text>
+          </Pressable>
           <Pressable
             onPress={isPlanningTomorrow ? onExitPlanTomorrow : onPlanTomorrow}
             accessibilityRole="button"
@@ -216,9 +217,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xxs,
   },
+  controlButtonOn: {
+    backgroundColor: colors.text,
+  },
   controlText: {
     ...typography.button,
     color: colors.text,
+  },
+  controlTextOn: {
+    color: colors.surface,
   },
   empty: {
     ...typography.body,

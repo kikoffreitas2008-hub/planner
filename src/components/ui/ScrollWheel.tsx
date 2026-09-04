@@ -10,8 +10,8 @@ import {
 
 import { colors, radius, typography } from "@/theme/tokens";
 
-const ITEM_HEIGHT = 40;
-const VISIBLE = 5;
+const ITEM_HEIGHT = 30;
+const VISIBLE = 3;
 const PADDING = ITEM_HEIGHT * ((VISIBLE - 1) / 2);
 
 export type ScrollWheelProps = {
@@ -82,10 +82,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   itemText: {
-    ...typography.heading,
+    ...typography.body,
     color: colors.textSecondary,
   },
   itemTextActive: {
+    ...typography.heading,
     color: colors.text,
   },
   selection: {

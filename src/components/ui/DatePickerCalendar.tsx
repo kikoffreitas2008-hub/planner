@@ -85,16 +85,17 @@ export function DatePickerCalendar({ value, onChange }: DatePickerCalendarProps)
 
 const styles = StyleSheet.create({
   wrap: {
-    gap: spacing.xs,
+    gap: spacing.xxs,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.xs,
+    paddingBottom: spacing.xxs,
   },
   month: {
-    ...typography.body,
+    ...typography.caption,
     color: colors.text,
   },
   weekRow: {
@@ -102,6 +103,7 @@ const styles = StyleSheet.create({
   },
   weekday: {
     ...typography.caption,
+    fontSize: 11,
     color: colors.textSecondary,
     flex: 1,
     textAlign: "center",
@@ -112,13 +114,13 @@ const styles = StyleSheet.create({
   },
   cell: {
     width: `${100 / 7}%`,
-    aspectRatio: 1,
+    height: 30,
     alignItems: "center",
     justifyContent: "center",
   },
   dayPill: {
-    width: 34,
-    height: 34,
+    width: 26,
+    height: 26,
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -127,12 +129,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.text,
   },
   day: {
-    ...typography.body,
+    ...typography.caption,
     color: colors.text,
   },
   dayMuted: {
     color: colors.textSecondary,
-    opacity: 0.5,
+    opacity: 0.45,
   },
   dayToday: {
     fontWeight: "800",

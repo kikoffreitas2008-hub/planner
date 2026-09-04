@@ -75,17 +75,17 @@ export function TimeRangeWheels({ start, end, onChangeStart, onChangeEnd }: Time
 
 const styles = StyleSheet.create({
   wrap: {
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   toggle: {
     flexDirection: "row",
     backgroundColor: colors.mutedSurface,
     borderRadius: radius.medium,
-    padding: 3,
+    padding: 2,
   },
   toggleButton: {
     flex: 1,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.xxs,
     alignItems: "center",
     borderRadius: radius.small,
   },
@@ -93,21 +93,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   toggleText: {
-    ...typography.button,
+    ...typography.caption,
     color: colors.textSecondary,
   },
   toggleTextActive: {
     color: colors.text,
   },
   wheels: {
-    height: 200,
+    height: 90,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.xs,
   },
   colon: {
-    ...typography.title,
+    ...typography.heading,
     color: colors.text,
   },
 });

@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   label: {
     ...typography.caption,
@@ -81,7 +81,8 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   picker: {
-    padding: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
     borderTopWidth: 1,
     borderTopColor: colors.divider,
     backgroundColor: colors.surface,
