@@ -3,25 +3,25 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-/** Web/PWA session storage. A native build swaps in expo-secure-store. */
-function sessionStorageAdapter() {
+/** True in a real browser — not during Expo Router's Node static render. */
+const inBrowser = (() => {
   try {
-    if (typeof window !== "undefined" && window.localStorage) return window.localStorage;
+    return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
   } catch {
-    /* private mode */
+    return false;
   }
-  return undefined;
-}
+})();
 
 /**
- * The Supabase client, or null when no credentials are configured — in which
- * case the app stays fully local (blueprint order: sync is opt-in via .env).
+ * The Supabase client, or null when there are no credentials or we are not in
+ * a browser (the app then stays fully local). Creating the client sets up
+ * refresh timers and listeners, so it must never run during SSR.
  */
 export const supabase: SupabaseClient | null =
-  url && anonKey
+  inBrowser && url && anonKey
     ? createClient(url, anonKey, {
         auth: {
-          storage: sessionStorageAdapter(),
+          storage: window.localStorage,
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: false,
@@ -29,4 +29,5 @@ export const supabase: SupabaseClient | null =
       })
     : null;
 
+/** Whether sync *could* run once signed in — independent of SSR. */
 export const isSyncConfigured = Boolean(url && anonKey);
