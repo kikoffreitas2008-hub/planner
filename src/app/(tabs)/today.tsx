@@ -10,11 +10,13 @@ import { Divider } from "@/components/ui/Divider";
 import { PlusMenu } from "@/components/ui/PlusMenu";
 import { QuoteCard } from "@/components/ui/QuoteCard";
 import { RoundIconButton } from "@/components/ui/RoundIconButton";
+import { applyFormEdit, createFromForm, deleteAgendaItem } from "@/data/agendaEdit";
 import quotesData from "@/data/bible-quotes.en-US.json";
 import { useOverdueCandidates } from "@/data/overdue";
-import { calendarItems, remember } from "@/data/repositories";
+import { remember } from "@/data/repositories";
 import type { AgendaItem } from "@/domain/agenda";
 import { quoteForLocalDate, type BibleQuote } from "@/domain/dailyQuote";
+import type { RecurrenceScope } from "@/domain/recurrenceMutation";
 import { formatDayHeading, nextDate, todayInLisbon } from "@/lib/today";
 
 const QUOTES = quotesData as BibleQuote[];
@@ -35,20 +37,14 @@ export default function TodayScreen() {
   const overdue = useOverdueCandidates(realToday);
   const isPlanningTomorrow = viewDate !== realToday;
 
-  function handleSubmit(result: AgendaFormResult) {
-    if (form?.mode === "edit" && form.item.origin.kind === "calendar") {
-      calendarItems.update(form.item.origin.id, {
-        title: result.title,
-        notes: result.notes,
-        date: result.date,
-        all_day: result.all_day,
-        starts_at: result.starts_at,
-        ends_at: result.ends_at,
-        color: result.color,
-      });
-    } else {
-      calendarItems.create(result);
-    }
+  function handleSubmit(result: AgendaFormResult, scope?: RecurrenceScope) {
+    if (form?.mode === "edit") applyFormEdit(form.item, result, scope);
+    else createFromForm(result);
+    setForm(null);
+  }
+
+  function handleDelete(scope?: RecurrenceScope) {
+    if (form?.mode === "edit") deleteAgendaItem(form.item, scope);
     setForm(null);
   }
 
@@ -117,6 +113,7 @@ export default function TodayScreen() {
           initial={form}
           onCancel={() => setForm(null)}
           onSubmit={handleSubmit}
+          onDelete={handleDelete}
         />
       ) : null}
 

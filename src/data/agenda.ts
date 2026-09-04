@@ -4,8 +4,10 @@ import { useTable, useUserSettings } from "@/data/store";
 import type { AgendaItem } from "@/domain/agenda";
 import { compareAgendaItems } from "@/domain/agenda";
 import type { ISODate } from "@/domain/date";
-import type { CalendarItem, Project, ProjectItem } from "@/domain/entities";
+import type { CalendarItem, Project, ProjectItem, RecurrenceException } from "@/domain/entities";
 import { occurrencesForDate, type RecurrenceRule, type RecurringSource } from "@/domain/recurrence";
+
+const NO_EXCEPTIONS: readonly RecurrenceException[] = [];
 
 function parseOffsets(value: string | null): readonly number[] | undefined {
   if (!value) return undefined;
@@ -67,7 +69,11 @@ export function calendarAgendaItem(item: CalendarItem): AgendaItem {
 }
 
 /** Expand one calendar item onto a single date (0 or 1 entries). */
-function expandForDate(item: CalendarItem, date: ISODate): AgendaItem[] {
+function expandForDate(
+  item: CalendarItem,
+  date: ISODate,
+  exceptions: readonly RecurrenceException[] = NO_EXCEPTIONS,
+): AgendaItem[] {
   if (item.deleted_at) return [];
 
   if (!item.recurrence_rule) {
@@ -82,7 +88,7 @@ function expandForDate(item: CalendarItem, date: ISODate): AgendaItem[] {
     return [];
   }
 
-  return occurrencesForDate(toRecurringSource(item, rule), date, []).map((occurrence) => ({
+  return occurrencesForDate(toRecurringSource(item, rule), date, exceptions).map((occurrence) => ({
     ...baseAgendaItem(item),
     date: occurrence.date,
     occurrenceId: occurrence.occurrenceId,
@@ -91,9 +97,21 @@ function expandForDate(item: CalendarItem, date: ISODate): AgendaItem[] {
     completedAt: occurrence.completedAt,
     title: occurrence.title,
     notes: occurrence.notes,
+    location: occurrence.location ?? null,
     allDay: occurrence.allDay,
     color: occurrence.color,
   }));
+}
+
+function eachDate(start: ISODate, end: ISODate): ISODate[] {
+  const dates: ISODate[] = [];
+  const cursor = new Date(`${start}T00:00:00.000Z`);
+  const last = new Date(`${end}T00:00:00.000Z`);
+  while (cursor <= last) {
+    dates.push(cursor.toISOString().slice(0, 10) as ISODate);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return dates;
 }
 
 /** A scheduled project item as an agenda entry (colour and title from the project). */
@@ -143,10 +161,17 @@ function compareManual(left: AgendaItem, right: AgendaItem): number {
   return left.createdAt.localeCompare(right.createdAt) || left.occurrenceId.localeCompare(right.occurrenceId);
 }
 
+function activeExceptions(
+  exceptions: Record<string, RecurrenceException>,
+): RecurrenceException[] {
+  return Object.values(exceptions).filter((exception) => !exception.deleted_at);
+}
+
 export function useDayAgenda(date: ISODate): readonly AgendaItem[] {
   const calendarItems = useTable("calendar_items");
   const projectItems = useTable("project_items");
   const projectsById = useTable("projects");
+  const exceptions = useTable("recurrence_exceptions");
   const manualDatesJson = useUserSettings()?.today_manual_dates ?? "[]";
 
   const manualToday = useMemo(() => {
@@ -158,7 +183,10 @@ export function useDayAgenda(date: ISODate): readonly AgendaItem[] {
   }, [manualDatesJson]);
 
   return useMemo(() => {
-    const fromCalendar = Object.values(calendarItems).flatMap((item) => expandForDate(item, date));
+    const exList = activeExceptions(exceptions);
+    const fromCalendar = Object.values(calendarItems).flatMap((item) =>
+      expandForDate(item, date, exList),
+    );
     const fromProjects = Object.values(projectItems).flatMap((item) => {
       if (item.deleted_at || item.scheduled_date !== date) return [];
       const project = projectsById[item.project_id];
@@ -173,5 +201,35 @@ export function useDayAgenda(date: ISODate): readonly AgendaItem[] {
     }
     const list = [...unique.values()];
     return manualToday.has(date) ? list.sort(compareManual) : list.sort(compareAgendaItems);
-  }, [calendarItems, projectItems, projectsById, date, manualToday]);
+  }, [calendarItems, projectItems, projectsById, exceptions, date, manualToday]);
+}
+
+/** Every agenda entry between two dates (inclusive) — for the Calendar views. */
+export function useRangeAgenda(start: ISODate, end: ISODate): readonly AgendaItem[] {
+  const calendarItems = useTable("calendar_items");
+  const projectItems = useTable("project_items");
+  const projectsById = useTable("projects");
+  const exceptions = useTable("recurrence_exceptions");
+
+  return useMemo(() => {
+    const dates = eachDate(start, end);
+    const exList = activeExceptions(exceptions);
+    const inRange = (date: string) => date >= start && date <= end;
+
+    const fromCalendar = Object.values(calendarItems).flatMap((item) =>
+      dates.flatMap((date) => expandForDate(item, date, exList)),
+    );
+    const fromProjects = Object.values(projectItems).flatMap((item) => {
+      if (item.deleted_at || !item.scheduled_date || !inRange(item.scheduled_date)) return [];
+      const project = projectsById[item.project_id];
+      if (!project || project.deleted_at) return [];
+      return [projectItemAgendaItem(item, project)];
+    });
+
+    const unique = new Map<string, AgendaItem>();
+    for (const item of [...fromCalendar, ...fromProjects]) {
+      if (!item.deletedAt && !unique.has(item.occurrenceId)) unique.set(item.occurrenceId, item);
+    }
+    return [...unique.values()].sort(compareAgendaItems);
+  }, [calendarItems, projectItems, projectsById, exceptions, start, end]);
 }

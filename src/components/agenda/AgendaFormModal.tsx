@@ -10,6 +10,9 @@ import {
   View,
 } from "react-native";
 
+import { NotificationField } from "@/components/agenda/NotificationField";
+import { RecurrenceField } from "@/components/agenda/RecurrenceField";
+import { RecurrenceScopeDialog } from "@/components/agenda/RecurrenceScopeDialog";
 import { ColorDot } from "@/components/ui/ColorDot";
 import { DatePickerCalendar } from "@/components/ui/DatePickerCalendar";
 import { PickerField } from "@/components/ui/PickerField";
@@ -17,6 +20,7 @@ import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
 import type { AgendaItem } from "@/domain/agenda";
 import type { ISODate } from "@/domain/date";
 import type { PaletteColor } from "@/domain/entities";
+import type { RecurrenceScope } from "@/domain/recurrenceMutation";
 import { validateTimeRange } from "@/domain/timeRange";
 import { formatClock, formatDMY } from "@/lib/today";
 import { colors, palette, radius, spacing, typography, type PaletteKey } from "@/theme/tokens";
@@ -33,6 +37,8 @@ export type AgendaFormResult = {
   ends_at: string | null;
   color: PaletteColor;
   location: string | null;
+  recurrence_rule: string | null;
+  notification_offsets: string | null;
 };
 
 export type AgendaFormModalProps = {
@@ -41,7 +47,8 @@ export type AgendaFormModalProps = {
   /** Preset type for a fresh item, or the existing agenda item when editing. */
   initial: { mode: "create"; itemType: "task" | "event" } | { mode: "edit"; item: AgendaItem };
   onCancel: () => void;
-  onSubmit: (result: AgendaFormResult) => void;
+  onSubmit: (result: AgendaFormResult, scope?: RecurrenceScope) => void;
+  onDelete?: (scope?: RecurrenceScope) => void;
 };
 
 function clockFromISO(iso: string | null): string {
@@ -54,8 +61,10 @@ export function AgendaFormModal({
   initial,
   onCancel,
   onSubmit,
+  onDelete,
 }: AgendaFormModalProps) {
   const editing = initial.mode === "edit" ? initial.item : null;
+  const isSeries = Boolean(editing?.recurrenceRule);
 
   const [itemType, setItemType] = useState<"task" | "event">(
     editing ? editing.itemKind : initial.mode === "create" ? initial.itemType : "task",
@@ -70,8 +79,17 @@ export function AgendaFormModal({
   const [location, setLocation] = useState(
     editing && editing.itemKind === "event" ? (editing.location ?? "") : "",
   );
+  const [recurrenceRule, setRecurrenceRule] = useState<string | null>(
+    editing?.recurrenceRule ?? null,
+  );
+  const [notificationOffsets, setNotificationOffsets] = useState<string | null>(
+    editing?.notificationOffsets && editing.notificationOffsets.length
+      ? JSON.stringify([...editing.notificationOffsets])
+      : null,
+  );
   const [confirmMidnight, setConfirmMidnight] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [scopePrompt, setScopePrompt] = useState<null | "edit" | "delete">(null);
 
   const validation = useMemo(() => {
     if (allDay) return { ok: true as const, starts_at: null, ends_at: null };
@@ -89,16 +107,16 @@ export function AgendaFormModal({
     };
   }, [allDay, date, start, end, confirmMidnight]);
 
-  function submit() {
+  function buildResult(): AgendaFormResult | null {
     if (!title.trim()) {
       setError("Give it a title.");
-      return;
+      return null;
     }
     if (!validation.ok) {
       setError(validation.reason);
-      return;
+      return null;
     }
-    onSubmit({
+    return {
       item_type: itemType,
       title: title.trim(),
       notes: notes.trim() ? notes.trim() : null,
@@ -108,7 +126,39 @@ export function AgendaFormModal({
       ends_at: validation.ends_at,
       color,
       location: itemType === "event" && location.trim() ? location.trim() : null,
-    });
+      recurrence_rule: recurrenceRule,
+      notification_offsets: notificationOffsets,
+    };
+  }
+
+  function submit() {
+    const result = buildResult();
+    if (!result) return;
+    if (editing && isSeries) {
+      setScopePrompt("edit");
+      return;
+    }
+    onSubmit(result);
+  }
+
+  function requestDelete() {
+    if (!onDelete) return;
+    if (isSeries) {
+      setScopePrompt("delete");
+      return;
+    }
+    onDelete();
+  }
+
+  function resolveScope(scope: RecurrenceScope) {
+    const mode = scopePrompt;
+    setScopePrompt(null);
+    if (mode === "delete") {
+      onDelete?.(scope);
+      return;
+    }
+    const result = buildResult();
+    if (result) onSubmit(result, scope);
   }
 
   return (
@@ -235,14 +285,30 @@ export function AgendaFormModal({
               />
             </Field>
 
+            <RecurrenceField value={recurrenceRule} onChange={setRecurrenceRule} />
+            <NotificationField value={notificationOffsets} onChange={setNotificationOffsets} />
+
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <Pressable onPress={submit} style={styles.saveButton} accessibilityRole="button">
               <Text style={styles.saveText}>Save</Text>
             </Pressable>
+
+            {editing && onDelete ? (
+              <Pressable onPress={requestDelete} style={styles.deleteButton} accessibilityRole="button">
+                <Text style={styles.deleteText}>Delete</Text>
+              </Pressable>
+            ) : null}
           </ScrollView>
         </View>
       </View>
+
+      <RecurrenceScopeDialog
+        visible={scopePrompt !== null}
+        action={scopePrompt === "delete" ? "delete" : "edit"}
+        onPick={resolveScope}
+        onCancel={() => setScopePrompt(null)}
+      />
     </Modal>
   );
 }
@@ -386,5 +452,13 @@ const styles = StyleSheet.create({
   saveText: {
     ...typography.button,
     color: colors.surface,
+  },
+  deleteButton: {
+    alignItems: "center",
+    paddingVertical: spacing.xs,
+  },
+  deleteText: {
+    ...typography.button,
+    color: "#662C2C",
   },
 });
