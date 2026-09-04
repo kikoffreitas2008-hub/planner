@@ -1,12 +1,18 @@
 // Zero-dependency static server for the exported web build (`dist/`).
 // Use this instead of the Metro dev server for long testing sessions —
 // Metro's watcher leaks memory over time. Run: node scripts/serve-dist.mjs
+//
+// Local dev tool only: bound to loopback, and every request is handled
+// defensively so a malformed URL can't crash the process (a bare `async`
+// request handler throwing turns into an unhandled rejection, which recent
+// Node versions treat as fatal).
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
-import { extname, join, normalize } from "node:path";
+import { extname, join, normalize, resolve, sep } from "node:path";
 
-const ROOT = new URL("../dist/", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+const ROOT = resolve(new URL("../dist/", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
 const PORT = Number(process.env.PORT ?? 8081);
+const HOST = process.env.HOST ?? "127.0.0.1";
 
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -23,20 +29,35 @@ const TYPES = {
   ".ttf": "font/ttf",
 };
 
+/** Resolve `path` and confirm it is still inside ROOT (blocks any `..` escape). */
+function withinRoot(path) {
+  const resolved = resolve(path);
+  return resolved === ROOT || resolved.startsWith(ROOT + sep) ? resolved : null;
+}
+
 async function tryFile(path) {
+  const contained = withinRoot(path);
+  if (!contained) return null;
   try {
-    const s = await stat(path);
-    if (s.isFile()) return path;
-    if (s.isDirectory()) return tryFile(join(path, "index.html"));
+    const s = await stat(contained);
+    if (s.isFile()) return contained;
+    if (s.isDirectory()) return tryFile(join(contained, "index.html"));
   } catch {
     /* not found */
   }
   return null;
 }
 
-const server = createServer(async (req, res) => {
-  const url = decodeURIComponent((req.url ?? "/").split("?")[0]);
-  const safe = normalize(url).replace(/^(\.\.[/\\])+/, "");
+async function handleRequest(req, res) {
+  let pathname = "/";
+  try {
+    pathname = decodeURIComponent((req.url ?? "/").split("?")[0]);
+  } catch {
+    res.writeHead(400).end("Bad request");
+    return;
+  }
+  const safe = normalize(pathname);
+
   let file = await tryFile(join(ROOT, safe));
   if (!file && !extname(safe)) file = await tryFile(join(ROOT, `${safe}.html`));
   if (!file) file = await tryFile(join(ROOT, "index.html")); // SPA fallback
@@ -51,8 +72,22 @@ const server = createServer(async (req, res) => {
     "cache-control": "no-cache",
   });
   res.end(body);
+}
+
+const server = createServer((req, res) => {
+  req.on("error", () => res.destroy());
+  res.on("error", () => {});
+  handleRequest(req, res).catch((error) => {
+    console.error("[serve-dist]", error);
+    if (!res.headersSent) res.writeHead(500).end("Server error");
+    else res.destroy();
+  });
 });
 
-server.listen(PORT, () => {
-  console.log(`Serving dist/ on http://localhost:${PORT}`);
+server.on("error", (error) => {
+  console.error("[serve-dist] server error:", error);
+});
+
+server.listen(PORT, HOST, () => {
+  console.log(`Serving dist/ on http://${HOST}:${PORT}`);
 });
