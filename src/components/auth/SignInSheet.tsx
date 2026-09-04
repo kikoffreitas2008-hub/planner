@@ -78,14 +78,14 @@ export function SignInSheet({ onClose }: { onClose: () => void }) {
               <Text style={styles.hint}>Sent to {email}.</Text>
               <TextInput
                 value={code}
-                onChangeText={(text) => setCode(text.replace(/\D/g, "").slice(0, 6))}
-                placeholder="123456"
+                onChangeText={(text) => setCode(text.replace(/\D/g, "").slice(0, 10))}
+                placeholder="Code from the email"
                 placeholderTextColor={colors.textSecondary}
                 keyboardType="number-pad"
                 inputMode="numeric"
                 style={[styles.input, styles.code]}
               />
-              <Action label="Verify" onPress={submitCode} busy={busy} disabled={code.length !== 6} />
+              <Action label="Verify" onPress={submitCode} busy={busy} disabled={code.length < 4} />
               <Pressable onPress={() => setStep("email")} accessibilityRole="button" style={styles.back}>
                 <Text style={styles.backText}>Use a different email</Text>
               </Pressable>
