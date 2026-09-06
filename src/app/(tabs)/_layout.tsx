@@ -1,17 +1,21 @@
 import { Tabs } from "expo-router/js-tabs";
-import { Platform, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, typography } from "@/theme/tokens";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 
-const TAB_BAR_BASE_HEIGHT = 68;
+// Height of the icon + label row itself; the home-indicator inset is added on top.
+const TAB_BAR_CONTENT_HEIGHT = 56;
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
-  // Apply the bottom inset exactly once; it is zero on web. The previous build
-  // applied it twice and the bar was far too tall (blueprint/06 section 5).
-  const bottomInset = Platform.OS === "web" ? 0 : insets.bottom;
+  // Honour the bottom inset on every platform. It is 0 in a desktop browser and
+  // ~34 in an installed iOS PWA, where the home indicator would otherwise sit on
+  // top of the icons. Applied once: the bar grows by the inset and reserves the
+  // same amount as padding, so the row stays centred above the indicator
+  // (blueprint/06 section 5 — the previous build applied it twice).
+  const bottomInset = insets.bottom;
 
   return (
     <Tabs
@@ -20,9 +24,9 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
-          height: TAB_BAR_BASE_HEIGHT + bottomInset,
+          height: TAB_BAR_CONTENT_HEIGHT + bottomInset,
           paddingBottom: bottomInset,
-          paddingTop: 8,
+          paddingTop: 0,
           backgroundColor: colors.surface,
           borderTopColor: colors.divider,
           borderTopWidth: StyleSheet.hairlineWidth,
@@ -32,7 +36,9 @@ export default function TabsLayout() {
           fontWeight: typography.caption.fontWeight,
         },
         tabBarItemStyle: {
-          paddingTop: 4,
+          // Centre the icon + label group vertically within the content row.
+          paddingTop: 6,
+          paddingBottom: 6,
         },
       }}
     >
