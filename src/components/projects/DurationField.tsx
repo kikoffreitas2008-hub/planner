@@ -1,60 +1,111 @@
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { formatDuration, parseDuration } from "@/domain/duration";
-import { colors, radius, spacing, typography } from "@/theme/tokens";
+import { ScrollWheel } from "@/components/ui/ScrollWheel";
+import { Touchable } from "@/components/ui/Touchable";
+import { formatDuration } from "@/domain/duration";
+import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
 
 export type DurationFieldProps = {
   minutes: number | null;
   onChange: (minutes: number | null) => void;
 };
 
-/** Accepts `90`, `90min`, `1h30`, `1:30` and normalises to minutes (blueprint/01 §4.5). */
-export function DurationField({ minutes, onChange }: DurationFieldProps) {
-  const [text, setText] = useState(minutes === null ? "" : formatDuration(minutes));
-  const [error, setError] = useState(false);
+const HOURS = Array.from({ length: 24 }, (_, index) => String(index));
+const MINUTES = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, "0"));
 
-  function commit() {
-    const trimmed = text.trim();
-    if (!trimmed) {
-      setError(false);
-      onChange(null);
-      return;
-    }
-    try {
-      const parsed = parseDuration(trimmed);
-      setError(false);
-      onChange(parsed);
-      setText(parsed === null ? "" : formatDuration(parsed));
-    } catch {
-      setError(true);
-    }
+/**
+ * The task's estimated time. A button showing the current estimate that opens
+ * a wheel picker (hours + minutes) in a pop-up. Unlike the old free-text
+ * field, the value is committed the moment "Done" is tapped — so it is
+ * already in place when the surrounding sheet is saved.
+ */
+export function DurationField({ minutes, onChange }: DurationFieldProps) {
+  const [open, setOpen] = useState(false);
+  const [h, setH] = useState(0);
+  const [m, setM] = useState(0);
+
+  function openPicker() {
+    const value = minutes ?? 0;
+    setH(Math.min(23, Math.floor(value / 60)));
+    setM(value % 60);
+    setOpen(true);
+  }
+
+  function done() {
+    const total = h * 60 + m;
+    onChange(total === 0 ? null : total);
+    setOpen(false);
+  }
+
+  function clear() {
+    onChange(null);
+    setOpen(false);
   }
 
   return (
-    <View style={styles.wrap}>
-      <TextInput
-        value={text}
-        onChangeText={setText}
-        onEndEditing={commit}
-        onSubmitEditing={commit}
-        placeholder="e.g. 1h30"
-        placeholderTextColor={colors.textSecondary}
-        autoCapitalize="none"
-        style={[styles.input, error && styles.inputError]}
-      />
-      {error ? <Text style={styles.error}>Try 90, 90min, 1h30 or 1:30</Text> : null}
-    </View>
+    <>
+      <Touchable
+        variant="row"
+        onPress={openPicker}
+        accessibilityLabel={
+          minutes === null ? "Set estimated time" : `Estimated time: ${formatDuration(minutes)}`
+        }
+        style={styles.button}
+      >
+        <Text style={[styles.value, minutes === null && styles.placeholder]}>
+          {minutes === null ? "Set time" : formatDuration(minutes)}
+        </Text>
+      </Touchable>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <View style={styles.backdrop}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            accessibilityLabel="Cancel"
+            onPress={() => setOpen(false)}
+          />
+          <View style={styles.card}>
+            <Text style={styles.title}>Estimated time</Text>
+            <View style={styles.wheels}>
+              <View style={styles.column}>
+                <ScrollWheel
+                  key={`h-${open}`}
+                  values={HOURS}
+                  value={String(h)}
+                  onChange={(next) => setH(Number(next))}
+                  accessibilityLabel="Hours"
+                />
+                <Text style={styles.unit}>h</Text>
+              </View>
+              <View style={styles.column}>
+                <ScrollWheel
+                  key={`m-${open}`}
+                  values={MINUTES}
+                  value={String(m).padStart(2, "0")}
+                  onChange={(next) => setM(Number(next))}
+                  accessibilityLabel="Minutes"
+                />
+                <Text style={styles.unit}>min</Text>
+              </View>
+            </View>
+            <View style={styles.actions}>
+              <Touchable variant="row" onPress={clear} style={styles.action}>
+                <Text style={styles.actionText}>Clear</Text>
+              </Touchable>
+              <Touchable onPress={done} haptic="success" style={[styles.action, styles.done]}>
+                <Text style={[styles.actionText, styles.doneText]}>Done</Text>
+              </Touchable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    gap: spacing.xxs,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
+  button: {
     borderWidth: 1,
     borderColor: colors.divider,
     borderRadius: radius.medium,
@@ -62,11 +113,69 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     minWidth: 96,
   },
-  inputError: {
-    borderColor: "#662C2C",
+  value: {
+    ...typography.body,
+    color: colors.text,
   },
-  error: {
+  placeholder: {
+    color: colors.textSecondary,
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.32)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.lg,
+  },
+  card: {
+    width: "100%",
+    maxWidth: 320,
+    backgroundColor: colors.surface,
+    borderRadius: radius.large,
+    padding: spacing.lg,
+    gap: spacing.md,
+    ...(Platform.OS === "web" ? { boxShadow: "0 12px 26px rgba(0,0,0,0.18)" } : shadow.floating),
+  },
+  title: {
     ...typography.caption,
-    color: "#662C2C",
+    color: colors.textSecondary,
+  },
+  wheels: {
+    height: 90,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.md,
+  },
+  column: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xxs,
+  },
+  unit: {
+    ...typography.body,
+    color: colors.textSecondary,
+  },
+  actions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  action: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.medium,
+  },
+  actionText: {
+    ...typography.button,
+    color: colors.textSecondary,
+  },
+  done: {
+    backgroundColor: colors.text,
+  },
+  doneText: {
+    color: colors.surface,
   },
 });

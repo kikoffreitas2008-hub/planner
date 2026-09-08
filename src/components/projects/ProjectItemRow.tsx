@@ -77,9 +77,6 @@ export function ProjectItemRow({ item, layout, onOpen, subtaskCount }: ProjectIt
               {importanceLabel(item.importance)}
             </Text>
           ) : null}
-          {item.estimated_minutes ? (
-            <Text style={styles.meta}>{formatDuration(item.estimated_minutes)}</Text>
-          ) : null}
           {item.scheduled_date ? <Text style={styles.meta}>Scheduled</Text> : null}
           {subtaskCount !== undefined ? (
             <Text style={styles.meta}>
@@ -89,6 +86,9 @@ export function ProjectItemRow({ item, layout, onOpen, subtaskCount }: ProjectIt
           {item.notes ? <Text style={styles.meta}>Notes</Text> : null}
         </View>
       </Touchable>
+      {item.estimated_minutes ? (
+        <Text style={styles.estimate}>{formatDuration(item.estimated_minutes)}</Text>
+      ) : null}
       <PlatformIcon sf="chevron.right" ion="chevron-forward" size={16} color={colors.textSecondary} />
     </View>
   );
@@ -137,6 +137,15 @@ const styles = StyleSheet.create({
   meta: {
     ...typography.caption,
     color: colors.textSecondary,
+  },
+  estimate: {
+    ...typography.caption,
+    color: colors.text,
+    backgroundColor: colors.mutedSurface,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    overflow: "hidden",
   },
   tableRow: {
     height: ROW_HEIGHT_TABLE,
