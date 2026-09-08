@@ -132,7 +132,6 @@ const styles = StyleSheet.create({
   heading: {
     ...typography.heading,
     color: colors.text,
-    textAlign: "center",
   },
   empty: {
     ...typography.caption,

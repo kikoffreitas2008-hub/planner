@@ -166,15 +166,14 @@ export function RoutineCard({ addSignal }: { addSignal: number }) {
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: "column",
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    gap: spacing.xs,
     marginBottom: spacing.sm,
   },
   title: {
     ...typography.heading,
     color: colors.text,
-    textAlign: "center",
   },
   reset: {
     backgroundColor: colors.mutedSurface,

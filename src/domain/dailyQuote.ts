@@ -33,12 +33,12 @@ export function quoteForLocalDate(
   date: string,
   catalogue: readonly BibleQuote[],
 ): BibleQuote {
-  if (catalogue.length !== 365) {
-    throw new RangeError(
-      "The daily catalogue must contain exactly 365 quotes.",
-    );
+  if (catalogue.length === 0) {
+    throw new RangeError("The daily catalogue must contain at least one quote.");
   }
 
+  // One quote per day, advancing by one each day and wrapping at the end of
+  // the catalogue — so the cycle length is however many quotes there are.
   const cycleDay = dayNumber(date) - dayNumber(EPOCH);
   return catalogue[positiveModulo(cycleDay, catalogue.length)];
 }
