@@ -48,17 +48,30 @@ In a terminal (use `! <command>` in this session so the output lands here):
 
 ```
 npm i -g supabase
-supabase login                       # opens a browser
+supabase login --token <token>        # from dashboard → Account → Access Tokens
 supabase link --project-ref pillcmhgwgzvmhlcvmwh
 supabase functions deploy delete-account
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<service-role key>
 ```
 
-The service-role key is in **Project Settings → API → Project API keys →
-`service_role` (secret)**. It goes only into Supabase secrets, never `.env`.
+No secret to set: `SUPABASE_URL`, `SUPABASE_ANON_KEY` and
+`SUPABASE_SERVICE_ROLE_KEY` are injected into every Edge Function
+automatically, and the `SUPABASE_` prefix is reserved — `supabase secrets
+set SUPABASE_...` is rejected. The function reads exactly those three.
 
-This step is optional for now — everything except "Delete account" works
-without it.
+`supabase login` needs a real terminal; inside this session pass
+`--token`. Revoke the token afterwards if it was pasted into the chat.
+
+Verify it is live (401 = deployed and rejecting anonymous calls, which is
+correct; 404 = not deployed):
+
+```
+curl -s -o /dev/null -w "%{http_code}\n" -X POST \
+  https://pillcmhgwgzvmhlcvmwh.supabase.co/functions/v1/delete-account \
+  -H "apikey: $EXPO_PUBLIC_SUPABASE_ANON_KEY"
+```
+
+This step is optional for the rest of the app — everything except
+"Delete account" works without it.
 
 ---
 
