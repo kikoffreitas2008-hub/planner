@@ -37,6 +37,15 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="apple-mobile-web-app-title" content="Planner" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
+        {/* Register the service worker so the installed PWA opens with no
+            network (blueprint/05 M5). Guarded and deferred to load. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}",
+          }}
+        />
+
         <ScrollViewStyleReset />
       </head>
       <body>{children}</body>
