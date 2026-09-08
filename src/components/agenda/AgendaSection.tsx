@@ -104,7 +104,10 @@ export function AgendaSection({
             accessibilityState={{ selected: !manualOrdered }}
             style={[styles.controlButton, !manualOrdered && styles.controlButtonOn]}
           >
-            <Text style={[styles.controlText, !manualOrdered && styles.controlTextOn]}>
+            <Text
+              numberOfLines={1}
+              style={[styles.controlText, !manualOrdered && styles.controlTextOn]}
+            >
               By time
             </Text>
           </Touchable>
@@ -112,7 +115,7 @@ export function AgendaSection({
             onPress={isPlanningTomorrow ? onExitPlanTomorrow : onPlanTomorrow}
             style={styles.controlButton}
           >
-            <Text style={styles.controlText}>
+            <Text numberOfLines={1} style={styles.controlText}>
               {isPlanningTomorrow ? "Back to today" : "Plan tomorrow"}
             </Text>
           </Touchable>
@@ -122,7 +125,9 @@ export function AgendaSection({
             accessibilityState={{ selected: editMode }}
             style={styles.controlButton}
           >
-            <Text style={styles.controlText}>{editMode ? "Done" : "Edit"}</Text>
+            <Text numberOfLines={1} style={styles.controlText}>
+              {editMode ? "Done" : "Edit"}
+            </Text>
           </Touchable>
         </View>
       </View>
@@ -197,7 +202,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    flexWrap: "wrap",
     gap: spacing.xs,
   },
   heading: {
@@ -205,23 +209,25 @@ const styles = StyleSheet.create({
     fontSize: 27,
     lineHeight: 32,
     color: colors.text,
+    // Yield first if the row is tight so the controls stay on the title's line.
+    flexShrink: 1,
   },
   controls: {
     flexDirection: "row",
-    gap: spacing.xs,
-    flexWrap: "wrap",
+    gap: spacing.xxs,
+    flexShrink: 0,
   },
   controlButton: {
     backgroundColor: colors.mutedSurface,
     borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xxs,
   },
   controlButtonOn: {
     backgroundColor: colors.text,
   },
   controlText: {
-    ...typography.button,
+    ...typography.caption,
     color: colors.text,
   },
   controlTextOn: {
