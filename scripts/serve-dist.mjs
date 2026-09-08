@@ -9,8 +9,12 @@
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = resolve(new URL("../dist/", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
+// fileURLToPath decodes percent-encoding and handles the Windows drive letter;
+// reading `new URL(...).pathname` by hand left "%20" literal when the project
+// path contains a space, so every request 404'd.
+const ROOT = resolve(fileURLToPath(new URL("../dist/", import.meta.url)));
 const PORT = Number(process.env.PORT ?? 8081);
 const HOST = process.env.HOST ?? "127.0.0.1";
 
