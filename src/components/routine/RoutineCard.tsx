@@ -24,6 +24,7 @@ export function RoutineCard({ addSignal }: { addSignal: number }) {
   const inputRef = useRef<TextInput>(null);
   const [draft, setDraft] = useState("");
   const [menuForId, setMenuForId] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
     routine.ensureDefaultList();
@@ -65,23 +66,37 @@ export function RoutineCard({ addSignal }: { addSignal: number }) {
     <SurfaceCard>
       <View style={styles.header}>
         <Text style={styles.title}>Morning Routine</Text>
-        <Touchable
-          onPress={() => list && routine.resetList(list.id)}
-          disabled={!anyChecked}
-          haptic="medium"
-          style={[styles.reset, !anyChecked && styles.resetDisabled]}
-        >
-          <Text style={styles.resetText}>Reset</Text>
-        </Touchable>
+        <View style={styles.headerControls}>
+          {items.length > 1 ? (
+            <Touchable
+              onPress={() => setEditMode((on) => !on)}
+              haptic="selection"
+              accessibilityState={{ selected: editMode }}
+              style={styles.reset}
+            >
+              <Text style={styles.resetText}>{editMode ? "Done" : "Edit"}</Text>
+            </Touchable>
+          ) : null}
+          <Touchable
+            onPress={() => list && routine.resetList(list.id)}
+            disabled={!anyChecked}
+            haptic="medium"
+            style={[styles.reset, !anyChecked && styles.resetDisabled]}
+          >
+            <Text style={styles.resetText}>Reset</Text>
+          </Touchable>
+        </View>
       </View>
 
       <View style={styles.list}>
         <DraggableColumn
           data={items}
+          enabled={editMode}
           estimatedRowHeight={44}
           onReorder={(orderedIds) => routine.applyOrder(orderedIds)}
           renderItem={(item) => (
             <SwipeableRow
+              enabled={!editMode}
               onSwipeRight={() => routine.setChecked(item.id, !item.completed_at)}
               onSwipeLeft={() => remove(item.id)}
               rightLabel={item.completed_at ? "Uncheck" : "Check"}
@@ -170,6 +185,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: spacing.sm,
+  },
+  headerControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
   },
   title: {
     ...typography.heading,

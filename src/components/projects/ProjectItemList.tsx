@@ -38,6 +38,7 @@ export function ProjectItemList({
 
   const [draft, setDraft] = useState("");
   const [sheetItem, setSheetItem] = useState<ProjectItem | null>(null);
+  const [editMode, setEditMode] = useState(false);
 
   function addItem() {
     const title = draft.trim();
@@ -57,13 +58,21 @@ export function ProjectItemList({
         <Text style={styles.count}>
           {items.length} item{items.length === 1 ? "" : "s"}
         </Text>
-        {project.order_mode === "manual" ? (
-          <Touchable onPress={() => projects.restoreImportanceOrder(project.id)}>
-            <Text style={styles.link}>Sort by importance</Text>
-          </Touchable>
-        ) : (
-          <Text style={styles.hint}>Drag the handle to reorder</Text>
-        )}
+        <View style={styles.headerControls}>
+          {project.order_mode === "manual" ? (
+            <Touchable onPress={() => projects.restoreImportanceOrder(project.id)}>
+              <Text style={styles.link}>Sort by importance</Text>
+            </Touchable>
+          ) : null}
+          {items.length > 1 ? (
+            <Touchable
+              onPress={() => setEditMode((on) => !on)}
+              accessibilityState={{ selected: editMode }}
+            >
+              <Text style={styles.link}>{editMode ? "Done" : "Edit"}</Text>
+            </Touchable>
+          ) : null}
+        </View>
       </View>
 
       {table ? <TableHead /> : null}
@@ -73,6 +82,7 @@ export function ProjectItemList({
       ) : (
         <DraggableColumn
           data={items}
+          enabled={editMode}
           estimatedRowHeight={estimatedRowHeight}
           onReorder={(orderedIds) => projectItems.applyOrder(project.id, orderedIds)}
           renderItem={(item) => (
@@ -143,9 +153,10 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
   },
-  hint: {
-    ...typography.caption,
-    color: colors.textSecondary,
+  headerControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
   },
   link: {
     ...typography.button,

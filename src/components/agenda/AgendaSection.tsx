@@ -137,7 +137,7 @@ export function AgendaSection({
       ) : (
         <DraggableColumn
           data={rows}
-          enabled={!editMode}
+          enabled={editMode}
           estimatedRowHeight={140}
           onReorder={reorder}
           renderItem={({ item }) => (
