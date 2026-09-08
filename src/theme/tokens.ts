@@ -128,10 +128,11 @@ export const layoutTokens = Object.freeze({
   contentMaxWidth: 760,
   horizontalPadding: 20,
   // Mobile-first: the quote card is the hero of Today. It grows with the
-  // viewport (see QuoteCard) but never below this.
-  quoteMinHeight: 320,
-  quoteViewportRatio: 0.42,
-  quoteMaxHeight: 480,
+  // viewport (see QuoteCard) but never below this. Sized down 25% from the
+  // original 320/0.42/480 so it takes less of the fold.
+  quoteMinHeight: 240,
+  quoteViewportRatio: 0.315,
+  quoteMaxHeight: 360,
   taskMinHeight: 120,
   projectMinHeight: 168,
   rememberHeight: 48,

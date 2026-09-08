@@ -107,7 +107,11 @@ export default function TodayScreen() {
         onExitPlanTomorrow={() => setViewDate(realToday)}
       />
 
+      <Divider />
+
       <RoutineCard addSignal={routineAddSignal} />
+
+      <Divider />
 
       <RememberSection date={viewDate} />
 

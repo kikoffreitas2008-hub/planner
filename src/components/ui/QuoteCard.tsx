@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderRadius: radius.large,
     backgroundColor: colors.blackGlossStart,
-    padding: spacing.xl,
+    padding: spacing.lg,
     ...(Platform.OS === "web"
       ? ({ boxShadow: "0 9px 22px rgba(30, 30, 34, 0.14)" } as ViewStyle)
       : shadow.card),
@@ -90,11 +90,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.lg,
   },
   quote: {
-    fontSize: 25,
-    lineHeight: 34,
+    fontSize: 19,
+    lineHeight: 26,
     fontWeight: "700",
     color: "#FFFFFF",
     textAlign: "center",
@@ -103,8 +103,8 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: "rgba(255, 255, 255, 0.72)",
     position: "absolute",
-    left: spacing.xl,
-    bottom: spacing.xl,
+    left: spacing.lg,
+    bottom: spacing.lg,
   },
   nonInteractive: {
     pointerEvents: "none",

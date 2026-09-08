@@ -194,10 +194,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: "column",
     alignItems: "center",
-    flexWrap: "wrap",
     gap: spacing.xs,
   },
   heading: {
@@ -205,11 +203,13 @@ const styles = StyleSheet.create({
     fontSize: 27,
     lineHeight: 32,
     color: colors.text,
+    textAlign: "center",
   },
   controls: {
     flexDirection: "row",
     gap: spacing.xs,
     flexWrap: "wrap",
+    justifyContent: "center",
   },
   controlButton: {
     backgroundColor: colors.mutedSurface,

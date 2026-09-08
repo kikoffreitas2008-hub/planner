@@ -7,6 +7,7 @@ import { AgendaFormModal, type AgendaFormResult } from "@/components/agenda/Agen
 import { MonthGrid } from "@/components/calendar/MonthGrid";
 import { TimelineView } from "@/components/calendar/TimelineView";
 import { AppScreen } from "@/components/ui/AppScreen";
+import { Divider } from "@/components/ui/Divider";
 import { GlobalSearchButton } from "@/components/search/GlobalSearchButton";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { PlusMenu } from "@/components/ui/PlusMenu";
@@ -159,6 +160,7 @@ export default function CalendarScreen() {
               items={rangeItems}
               onSelect={setFocusDate}
             />
+            <Divider />
             <View style={styles.dayList}>
               <Text style={styles.dayListHeading}>{calendarDayLabel(focusDate)}</Text>
               {dayItems.length === 0 ? (
