@@ -45,8 +45,9 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/test-register.mjs --test \"src/**/*.test.ts\"",
-    "build:web": "expo export -p web",
-    "serve:web": "node scripts/serve-dist.mjs"
+    "build:web": "expo export -p web && node -e \"require('fs').writeFileSync('dist/_redirects','/*    /index.html    200\\n')\"",
+    "serve:web": "node scripts/serve-dist.mjs",
+    "deploy:web": "npm run build:web && npx wrangler pages deploy dist --project-name=planner --branch=main --commit-dirty=true"
   },
   "private": true
 }
