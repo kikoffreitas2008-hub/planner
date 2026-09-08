@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { PopIn } from "@/components/ui/PopIn";
 import { RoundIconButton } from "@/components/ui/RoundIconButton";
 import { Touchable } from "@/components/ui/Touchable";
 import { colors, layoutTokens, radius, shadow, spacing, typography } from "@/theme/tokens";
@@ -31,7 +32,7 @@ export function PlusMenu({ options }: { options: readonly PlusMenuOption[] }) {
             accessibilityLabel="Dismiss menu"
             onPress={() => setOpen(false)}
           />
-          <View style={styles.menu}>
+          <PopIn style={styles.menu}>
             {options.map((option) => (
               <Touchable
                 key={option.key}
@@ -49,7 +50,7 @@ export function PlusMenu({ options }: { options: readonly PlusMenuOption[] }) {
                 </Text>
               </Touchable>
             ))}
-          </View>
+          </PopIn>
         </View>
       </Modal>
     </>

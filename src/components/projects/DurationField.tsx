@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { PopIn } from "@/components/ui/PopIn";
 import { ScrollWheel } from "@/components/ui/ScrollWheel";
 import { Touchable } from "@/components/ui/Touchable";
 import { formatDuration } from "@/domain/duration";
@@ -65,7 +66,7 @@ export function DurationField({ minutes, onChange }: DurationFieldProps) {
             accessibilityLabel="Cancel"
             onPress={() => setOpen(false)}
           />
-          <View style={styles.card}>
+          <PopIn style={styles.card}>
             <Text style={styles.title}>Estimated time</Text>
             <View style={styles.wheels}>
               <View style={styles.column}>
@@ -97,7 +98,7 @@ export function DurationField({ minutes, onChange }: DurationFieldProps) {
                 <Text style={[styles.actionText, styles.doneText]}>Done</Text>
               </Touchable>
             </View>
-          </View>
+          </PopIn>
         </View>
       </Modal>
     </>

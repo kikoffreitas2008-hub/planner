@@ -3,8 +3,9 @@ import { useLocalSearchParams } from "expo-router";
 
 import { ProjectItemList } from "@/components/projects/ProjectItemList";
 import { BackBar } from "@/components/ui/BackBar";
+import { ZoomIn } from "@/components/ui/ZoomIn";
 import { useProject, useProjectItems } from "@/data/projects";
-import { useTable } from "@/data/store";
+import { useTable, useUserSettings } from "@/data/store";
 import { colors, layoutTokens, spacing, typography } from "@/theme/tokens";
 
 export default function SubtaskListScreen() {
@@ -12,6 +13,7 @@ export default function SubtaskListScreen() {
   const task = useTable("project_items")[taskId];
   const project = useProject(task?.project_id);
   const subtasks = useProjectItems(task?.project_id, taskId);
+  const reduceMotion = useUserSettings()?.reduce_motion ?? false;
 
   if (!project || !task) {
     return (
@@ -31,7 +33,9 @@ export default function SubtaskListScreen() {
         subtitle={`${project.title} · ${doneCount} / ${subtasks.length} done`}
       />
       <ScrollView contentContainerStyle={styles.content}>
-        <ProjectItemList project={project} parentId={taskId} items={subtasks} />
+        <ZoomIn disabled={reduceMotion}>
+          <ProjectItemList project={project} parentId={taskId} items={subtasks} />
+        </ZoomIn>
       </ScrollView>
     </View>
   );

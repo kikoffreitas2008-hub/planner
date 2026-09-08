@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ColorDot } from "@/components/ui/ColorDot";
+import { PopIn } from "@/components/ui/PopIn";
 import { Touchable } from "@/components/ui/Touchable";
 import { colors, palette, radius, shadow, spacing, typography, type PaletteKey } from "@/theme/tokens";
 
@@ -39,7 +40,7 @@ export function ColorPickerSheet({ visible, value, onPick, onClose }: ColorPicke
             onClose();
           }}
         />
-        <View style={styles.card}>
+        <PopIn style={styles.card}>
           <View style={styles.header}>
             <Text style={styles.title}>Colour</Text>
             <Touchable
@@ -72,7 +73,7 @@ export function ColorPickerSheet({ visible, value, onPick, onClose }: ColorPicke
           <Touchable onPress={onClose} haptic="success" style={styles.done}>
             <Text style={styles.doneText}>Done</Text>
           </Touchable>
-        </View>
+        </PopIn>
       </View>
     </Modal>
   );

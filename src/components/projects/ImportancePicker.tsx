@@ -1,5 +1,6 @@
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { PopIn } from "@/components/ui/PopIn";
 import { Touchable } from "@/components/ui/Touchable";
 import type { ProjectItem } from "@/domain/entities";
 import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
@@ -34,7 +35,7 @@ export function ImportancePicker({ visible, value, onPick, onClose }: Importance
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} accessibilityLabel="Close" onPress={onClose} />
-        <View style={styles.card}>
+        <PopIn style={styles.card}>
           <Text style={styles.title}>Importance</Text>
           {OPTIONS.map((option) => (
             <Touchable
@@ -52,7 +53,7 @@ export function ImportancePicker({ visible, value, onPick, onClose }: Importance
               {option.value === value ? <Text style={styles.check}>✓</Text> : null}
             </Touchable>
           ))}
-        </View>
+        </PopIn>
       </View>
     </Modal>
   );

@@ -1,5 +1,6 @@
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { PopIn } from "@/components/ui/PopIn";
 import { Touchable } from "@/components/ui/Touchable";
 import type { RecurrenceScope } from "@/domain/recurrenceMutation";
 import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
@@ -28,7 +29,7 @@ export function RecurrenceScopeDialog({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} accessibilityLabel="Cancel" onPress={onCancel} />
-        <View style={styles.card}>
+        <PopIn style={styles.card}>
           <Text style={styles.title}>{action === "delete" ? "Delete" : "Apply changes to"}</Text>
           {OPTIONS.map((option) => (
             <Touchable
@@ -43,7 +44,7 @@ export function RecurrenceScopeDialog({
           <Touchable onPress={onCancel} style={styles.cancel}>
             <Text style={styles.cancelText}>Cancel</Text>
           </Touchable>
-        </View>
+        </PopIn>
       </View>
     </Modal>
   );

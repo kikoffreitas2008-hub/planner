@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { PopIn } from "@/components/ui/PopIn";
 import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
 import { Touchable } from "@/components/ui/Touchable";
 import type { AgendaItem } from "@/domain/agenda";
@@ -37,7 +38,7 @@ export function TimeEditModal({ visible, item, onSave, onClose }: TimeEditModalP
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} accessibilityLabel="Close" onPress={onClose} />
-        <View style={styles.card}>
+        <PopIn style={styles.card}>
           <Touchable
             onPress={onClose}
             style={styles.close}
@@ -77,7 +78,7 @@ export function TimeEditModal({ visible, item, onSave, onClose }: TimeEditModalP
           >
             <Text style={styles.saveText}>Save</Text>
           </Touchable>
-        </View>
+        </PopIn>
       </View>
     </Modal>
   );

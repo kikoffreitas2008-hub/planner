@@ -46,6 +46,10 @@ export default function RootLayout() {
           }}
         >
           <Stack.Screen name="(tabs)" />
+          {/* Project and task screens fade at the route level so the content's
+              own zoom-in / zoom-out (see ZoomIn) reads as the transition. */}
+          <Stack.Screen name="project/[id]" options={{ animation: "fade" }} />
+          <Stack.Screen name="task/[id]" options={{ animation: "fade" }} />
         </Stack>
         <OfflineBar />
         <UndoBar />

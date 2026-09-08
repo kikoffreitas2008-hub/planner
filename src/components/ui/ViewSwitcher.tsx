@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { PopIn } from "@/components/ui/PopIn";
 import { Touchable } from "@/components/ui/Touchable";
 import {
   CALENDAR_VIEWS,
@@ -40,18 +40,14 @@ export function ViewSwitcher({ value, onChange }: ViewSwitcherProps) {
         <PlatformIcon sf="chevron.down" ion="chevron-down" size={13} color={colors.text} />
       </Touchable>
 
-      <Modal visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)}>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable
           style={StyleSheet.absoluteFill}
           accessibilityLabel="Dismiss menu"
           accessibilityRole="button"
           onPress={() => setOpen(false)}
         />
-        <Animated.View
-          entering={FadeIn.duration(120)}
-          exiting={FadeOut.duration(90)}
-          style={styles.menu}
-        >
+        <PopIn style={styles.menu}>
           {CALENDAR_VIEWS.map((option) => {
             const selected = option === value;
             return (
@@ -76,7 +72,7 @@ export function ViewSwitcher({ value, onChange }: ViewSwitcherProps) {
               </Touchable>
             );
           })}
-        </Animated.View>
+        </PopIn>
       </Modal>
     </>
   );

@@ -1,29 +1,28 @@
-import { useEffect, type ReactNode } from "react";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import type { ReactNode } from "react";
+import { View } from "react-native";
+import Animated, { Keyframe } from "react-native-reanimated";
 
 import { motion } from "@/theme/tokens";
 
-/**
- * A short zoom-in on mount, for opening a project (blueprint/01 §4.1).
- * `disabled` (Reduce Motion) renders the child with no animation.
- */
+// A short zoom-in on mount and a quicker zoom-out on unmount, for opening and
+// leaving a project or one of its tasks (blueprint/01 §4.1). The exit is
+// deliberately faster than the enter so back navigation still feels snappy.
+const enter = new Keyframe({
+  0: { opacity: 0.35, transform: [{ scale: 0.95 }] },
+  100: { opacity: 1, transform: [{ scale: 1 }] },
+}).duration(motion.standard);
+
+const leave = new Keyframe({
+  0: { opacity: 1, transform: [{ scale: 1 }] },
+  100: { opacity: 0, transform: [{ scale: 0.97 }] },
+}).duration(Math.round(motion.standard * 0.6));
+
+/** `disabled` (Reduce Motion) renders the child with no animation. */
 export function ZoomIn({ children, disabled }: { children: ReactNode; disabled?: boolean }) {
-  const progress = useSharedValue(disabled ? 1 : 0);
-
-  useEffect(() => {
-    if (!disabled) progress.value = withTiming(1, { duration: motion.standard });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const style = useAnimatedStyle(() => ({
-    opacity: 0.4 + progress.value * 0.6,
-    transform: [{ scale: 0.96 + progress.value * 0.04 }],
-  }));
-
-  if (disabled) return <>{children}</>;
-  return <Animated.View style={style}>{children}</Animated.View>;
+  if (disabled) return <View>{children}</View>;
+  return (
+    <Animated.View entering={enter} exiting={leave}>
+      {children}
+    </Animated.View>
+  );
 }
