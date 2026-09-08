@@ -2,6 +2,14 @@ import { isISODateOnly, startOfWeekISO, type ISODate } from "./date.ts";
 
 export type CalendarView = "month" | "week" | "day";
 
+/** The views in coarse→fine order — the order the switcher lists them. */
+export const CALENDAR_VIEWS: readonly CalendarView[] = ["month", "week", "day"] as const;
+
+/** "month" → "Month". Used for the switcher trigger and its menu rows. */
+export function calendarViewLabel(view: CalendarView): string {
+  return view[0].toUpperCase() + view.slice(1);
+}
+
 export interface CalendarDateState {
   selectedDate: ISODate;
   view: CalendarView;

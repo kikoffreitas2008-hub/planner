@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { ProjectCard } from "@/components/projects/ProjectCard";
+import { Touchable } from "@/components/ui/Touchable";
 import type { Project } from "@/domain/entities";
 import { colors, layoutTokens, spacing, typography } from "@/theme/tokens";
 
@@ -51,9 +52,9 @@ export function ProjectGrid({
         </View>
       )}
 
-      <Pressable onPress={onOpenArchived} accessibilityRole="button" style={styles.archived}>
+      <Touchable variant="row" onPress={onOpenArchived} style={styles.archived}>
         <Text style={styles.archivedText}>Archived projects{archivedCount ? ` (${archivedCount})` : ""}</Text>
-      </Pressable>
+      </Touchable>
     </View>
   );
 }

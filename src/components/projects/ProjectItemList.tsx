@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 
 import { DraggableColumn } from "@/components/projects/DraggableColumn";
 import {
@@ -8,6 +8,7 @@ import {
   ROW_HEIGHT_TABLE,
 } from "@/components/projects/ProjectItemRow";
 import { ProjectItemSheet } from "@/components/projects/ProjectItemSheet";
+import { Touchable } from "@/components/ui/Touchable";
 import { projectItems, projects } from "@/data/repositories";
 import { formatDuration, totalEstimatedMinutes } from "@/domain/duration";
 import type { Project, ProjectItem } from "@/domain/entities";
@@ -57,12 +58,9 @@ export function ProjectItemList({
           {items.length} item{items.length === 1 ? "" : "s"}
         </Text>
         {project.order_mode === "manual" ? (
-          <Pressable
-            onPress={() => projects.restoreImportanceOrder(project.id)}
-            accessibilityRole="button"
-          >
+          <Touchable onPress={() => projects.restoreImportanceOrder(project.id)}>
             <Text style={styles.link}>Sort by importance</Text>
-          </Pressable>
+          </Touchable>
         ) : (
           <Text style={styles.hint}>Drag the handle to reorder</Text>
         )}
@@ -102,9 +100,9 @@ export function ProjectItemList({
           style={styles.addInput}
         />
         {draft.trim() ? (
-          <Pressable onPress={addItem} accessibilityRole="button" style={styles.addButton}>
+          <Touchable onPress={addItem} haptic="success" style={styles.addButton}>
             <Text style={styles.addButtonText}>Add</Text>
-          </Pressable>
+          </Touchable>
         ) : null}
       </View>
 

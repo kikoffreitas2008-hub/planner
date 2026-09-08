@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { DatePickerCalendar } from "@/components/ui/DatePickerCalendar";
 import { PickerField } from "@/components/ui/PickerField";
 import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
+import { Touchable } from "@/components/ui/Touchable";
 import { calendarItems, settings } from "@/data/repositories";
 import type { AgendaItem } from "@/domain/agenda";
 import type { ISODate } from "@/domain/date";
@@ -57,9 +58,9 @@ export function OverdueReviewSheet({ candidates, today, onDone }: OverdueReviewS
             )}
           </ScrollView>
 
-          <Pressable onPress={finish} accessibilityRole="button" style={styles.done}>
+          <Touchable onPress={finish} haptic="success" style={styles.done}>
             <Text style={styles.doneText}>Done</Text>
-          </Pressable>
+          </Touchable>
         </View>
       </View>
     </Modal>
@@ -144,13 +145,12 @@ function Action({
   primary?: boolean;
 }) {
   return (
-    <Pressable
+    <Touchable
       onPress={onPress}
-      accessibilityRole="button"
       style={[styles.action, primary && styles.actionPrimary]}
     >
       <Text style={[styles.actionText, primary && styles.actionTextPrimary]}>{label}</Text>
-    </Pressable>
+    </Touchable>
   );
 }
 

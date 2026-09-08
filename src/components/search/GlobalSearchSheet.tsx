@@ -3,6 +3,7 @@ import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, Vi
 import { useRouter } from "expo-router";
 
 import { PlatformIcon, type PlatformIconProps } from "@/components/ui/PlatformIcon";
+import { Touchable } from "@/components/ui/Touchable";
 import { search, useSearchIndex, type SearchResult } from "@/data/search";
 import { formatDayHeading, todayInLisbon } from "@/lib/today";
 import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
@@ -69,9 +70,9 @@ export function GlobalSearchSheet({ onClose }: { onClose: () => void }) {
               autoFocus
               style={styles.input}
             />
-            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+            <Touchable onPress={onClose} accessibilityLabel="Close">
               <Text style={styles.close}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
 
           <ScrollView contentContainerStyle={styles.results} keyboardShouldPersistTaps="handled">
@@ -79,10 +80,10 @@ export function GlobalSearchSheet({ onClose }: { onClose: () => void }) {
               <Text style={styles.empty}>No matches.</Text>
             ) : (
               results.map((result) => (
-                <Pressable
+                <Touchable
                   key={result.id}
+                  variant="row"
                   onPress={() => open(result)}
-                  accessibilityRole="button"
                   style={styles.row}
                 >
                   <PlatformIcon
@@ -100,7 +101,7 @@ export function GlobalSearchSheet({ onClose }: { onClose: () => void }) {
                       {result.date ? ` · ${formatDayHeading(result.date)}` : ""}
                     </Text>
                   </View>
-                </Pressable>
+                </Touchable>
               ))
             )}
           </ScrollView>

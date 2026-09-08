@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 
 import { colors, radius } from "@/theme/tokens";
 import { PlatformIcon, type PlatformIconProps } from "@/components/ui/PlatformIcon";
+import { Touchable } from "@/components/ui/Touchable";
 
 export type RoundIconButtonProps = {
   sf: PlatformIconProps["sf"];
@@ -20,14 +21,13 @@ export function RoundIconButton({
   style,
 }: RoundIconButtonProps) {
   return (
-    <Pressable
-      accessibilityRole="button"
+    <Touchable
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      style={({ pressed }) => [styles.button, pressed && styles.pressed, style]}
+      style={[styles.button, style]}
     >
       <PlatformIcon sf={sf} ion={ion} size={22} color={colors.text} />
-    </Pressable>
+    </Touchable>
   );
 }
 
@@ -39,8 +39,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.mutedSurface,
-  },
-  pressed: {
-    opacity: 0.6,
   },
 });

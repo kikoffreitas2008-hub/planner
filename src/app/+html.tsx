@@ -47,6 +47,36 @@ export default function Root({ children }: PropsWithChildren) {
         />
 
         <ScrollViewStyleReset />
+
+        {/* Web interaction polish — make touch, scroll and tap feel like a
+            native app rather than a web page. Kept small and side-effect-free:
+            no smooth-scroll override, no scrollbar restyling. */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              * { -webkit-tap-highlight-color: transparent; }
+              html, body {
+                overscroll-behavior: none;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                text-rendering: optimizeLegibility;
+              }
+              /* No 300ms tap delay, and controls are not text to select. */
+              [role="button"], [role="menuitem"], [role="tab"], [role="checkbox"], [role="switch"] {
+                touch-action: manipulation;
+                -webkit-user-select: none;
+                user-select: none;
+              }
+              @media (prefers-reduced-motion: reduce) {
+                *, *::before, *::after {
+                  animation-duration: 0.001ms !important;
+                  animation-iteration-count: 1 !important;
+                  transition-duration: 0.001ms !important;
+                }
+              }
+            `,
+          }}
+        />
       </head>
       <body>{children}</body>
     </html>

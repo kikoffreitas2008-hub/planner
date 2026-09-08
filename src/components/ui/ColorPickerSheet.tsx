@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ColorDot } from "@/components/ui/ColorDot";
+import { Touchable } from "@/components/ui/Touchable";
 import { colors, palette, radius, shadow, spacing, typography, type PaletteKey } from "@/theme/tokens";
 
 const PALETTE_KEYS = Object.keys(palette) as PaletteKey[];
@@ -41,37 +42,36 @@ export function ColorPickerSheet({ visible, value, onPick, onClose }: ColorPicke
         <View style={styles.card}>
           <View style={styles.header}>
             <Text style={styles.title}>Colour</Text>
-            <Pressable
+            <Touchable
               onPress={() => {
                 onPick(openedWith.current);
                 onClose();
               }}
-              accessibilityRole="button"
               accessibilityLabel="Close without keeping the change"
               hitSlop={8}
             >
               <Text style={styles.close}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
 
           <View style={styles.grid}>
             {PALETTE_KEYS.map((key) => (
-              <Pressable
+              <Touchable
                 key={key}
+                haptic="selection"
                 onPress={() => onPick(key)}
-                accessibilityRole="button"
                 accessibilityLabel={key}
                 accessibilityState={{ selected: value === key }}
                 style={[styles.swatch, value === key && styles.swatchActive]}
               >
                 <ColorDot color={key} size={30} />
-              </Pressable>
+              </Touchable>
             ))}
           </View>
 
-          <Pressable onPress={onClose} accessibilityRole="button" style={styles.done}>
+          <Touchable onPress={onClose} haptic="success" style={styles.done}>
             <Text style={styles.doneText}>Done</Text>
-          </Pressable>
+          </Touchable>
         </View>
       </View>
     </Modal>

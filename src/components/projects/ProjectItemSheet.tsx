@@ -20,6 +20,7 @@ import {
 import { DatePickerCalendar } from "@/components/ui/DatePickerCalendar";
 import { PickerField } from "@/components/ui/PickerField";
 import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
+import { Touchable } from "@/components/ui/Touchable";
 import { projectItems } from "@/data/repositories";
 import { offerUndo } from "@/data/undoBar";
 import type { ISODate } from "@/domain/date";
@@ -120,9 +121,9 @@ export function ProjectItemSheet({ item, onClose }: ProjectItemSheetProps) {
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>Item</Text>
-            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+            <Touchable onPress={onClose} accessibilityLabel="Close">
               <Text style={styles.close}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
 
           <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
@@ -138,15 +139,15 @@ export function ProjectItemSheet({ item, onClose }: ProjectItemSheetProps) {
 
             <View style={styles.inlineRow}>
               <Field label="Importance" style={styles.inlineField}>
-                <Pressable
+                <Touchable
+                  variant="row"
                   onPress={() => setImportanceOpen(true)}
-                  accessibilityRole="button"
                   style={styles.pickerButton}
                 >
                   <Text style={[styles.pickerText, { color: importanceColor(importance) }]}>
                     {importanceLabel(importance)}
                   </Text>
-                </Pressable>
+                </Touchable>
               </Field>
               <Field label="Time" style={styles.inlineField}>
                 <DurationField minutes={estimate} onChange={setEstimate} />
@@ -196,25 +197,25 @@ export function ProjectItemSheet({ item, onClose }: ProjectItemSheetProps) {
                   </PickerField>
                 ) : null}
                 {!schedule.ok && schedule.needsMidnight ? (
-                  <Pressable
+                  <Touchable
+                    variant="row"
                     onPress={() => setConfirmMidnight(true)}
                     style={styles.midnight}
-                    accessibilityRole="button"
                   >
                     <Text style={styles.midnightText}>Ends the next day — tap to confirm.</Text>
-                  </Pressable>
+                  </Touchable>
                 ) : null}
               </View>
             ) : null}
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <Pressable onPress={save} accessibilityRole="button" style={styles.saveButton}>
+            <Touchable onPress={save} haptic="success" style={styles.saveButton}>
               <Text style={styles.saveText}>Save</Text>
-            </Pressable>
-            <Pressable onPress={remove} accessibilityRole="button" style={styles.deleteButton}>
+            </Touchable>
+            <Touchable onPress={remove} haptic="warning" style={styles.deleteButton}>
               <Text style={styles.deleteText}>Delete item</Text>
-            </Pressable>
+            </Touchable>
           </ScrollView>
         </View>
       </View>

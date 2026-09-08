@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
 
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { Touchable } from "@/components/ui/Touchable";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
 
 export type PickerFieldProps = {
@@ -31,9 +33,10 @@ export function PickerField({
 
   return (
     <View style={styles.wrap}>
-      <Pressable
+      <Touchable
+        variant="row"
+        haptic="selection"
         onPress={() => setOpen((current) => !current)}
-        accessibilityRole="button"
         accessibilityState={{ expanded: open }}
         style={styles.row}
       >
@@ -47,8 +50,12 @@ export function PickerField({
           size={16}
           color={colors.textSecondary}
         />
-      </Pressable>
-      {open ? <View style={styles.picker}>{children}</View> : null}
+      </Touchable>
+      {open ? (
+        <Animated.View entering={FadeIn.duration(140)} style={styles.picker}>
+          {children}
+        </Animated.View>
+      ) : null}
     </View>
   );
 }

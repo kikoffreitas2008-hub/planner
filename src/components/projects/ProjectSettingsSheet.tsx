@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Touchable } from "@/components/ui/Touchable";
 import { projects } from "@/data/repositories";
 import { offerUndo } from "@/data/undoBar";
 import type { Project } from "@/domain/entities";
@@ -37,19 +38,19 @@ export function ProjectSettingsSheet({
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>Project settings</Text>
-            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+            <Touchable onPress={onClose} accessibilityLabel="Close">
               <Text style={styles.close}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
 
           <View style={styles.body}>
             <Text style={styles.sectionLabel}>Progress</Text>
             <View style={styles.segment}>
               {(["items", "time"] as const).map((option) => (
-                <Pressable
+                <Touchable
                   key={option}
+                  haptic="selection"
                   onPress={() => projects.update(project.id, { progress_mode: option })}
-                  accessibilityRole="button"
                   accessibilityState={{ selected: project.progress_mode === option }}
                   style={[
                     styles.segmentButton,
@@ -64,23 +65,23 @@ export function ProjectSettingsSheet({
                   >
                     {option === "items" ? "By count" : "By time"}
                   </Text>
-                </Pressable>
+                </Touchable>
               ))}
             </View>
 
             {project.order_mode === "manual" ? (
-              <Pressable
+              <Touchable
+                variant="row"
                 onPress={() => projects.restoreImportanceOrder(project.id)}
-                accessibilityRole="button"
                 style={styles.action}
               >
                 <Text style={styles.actionText}>Restore importance ordering</Text>
-              </Pressable>
+              </Touchable>
             ) : null}
 
-            <Pressable onPress={archive} accessibilityRole="button" style={styles.action}>
+            <Touchable variant="row" onPress={archive} style={styles.action}>
               <Text style={styles.actionText}>Archive project</Text>
-            </Pressable>
+            </Touchable>
 
             {confirmingDelete ? (
               <View style={styles.confirmBox}>
@@ -88,30 +89,30 @@ export function ProjectSettingsSheet({
                   Delete “{project.title}” and all its items permanently?
                 </Text>
                 <View style={styles.confirmRow}>
-                  <Pressable
+                  <Touchable
                     onPress={deletePermanently}
-                    accessibilityRole="button"
+                    haptic="warning"
                     style={styles.confirmDelete}
                   >
                     <Text style={styles.confirmDeleteText}>Delete permanently</Text>
-                  </Pressable>
-                  <Pressable
+                  </Touchable>
+                  <Touchable
+                    variant="row"
                     onPress={() => setConfirmingDelete(false)}
-                    accessibilityRole="button"
                     style={styles.action}
                   >
                     <Text style={styles.actionText}>Cancel</Text>
-                  </Pressable>
+                  </Touchable>
                 </View>
               </View>
             ) : (
-              <Pressable
+              <Touchable
+                variant="row"
                 onPress={() => setConfirmingDelete(true)}
-                accessibilityRole="button"
                 style={styles.action}
               >
                 <Text style={[styles.actionText, styles.danger]}>Delete permanently</Text>
-              </Pressable>
+              </Touchable>
             )}
           </View>
         </View>

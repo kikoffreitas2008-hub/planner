@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { SwipeableRow } from "@/components/agenda/SwipeableRow";
 import { DraggableColumn } from "@/components/projects/DraggableColumn";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { SurfaceCard } from "@/components/ui/SurfaceCard";
+import { Touchable } from "@/components/ui/Touchable";
 import { routine } from "@/data/repositories";
 import { useTable } from "@/data/store";
 import { offerUndo } from "@/data/undoBar";
@@ -64,14 +65,14 @@ export function RoutineCard({ addSignal }: { addSignal: number }) {
     <SurfaceCard>
       <View style={styles.header}>
         <Text style={styles.title}>Morning Routine</Text>
-        <Pressable
+        <Touchable
           onPress={() => list && routine.resetList(list.id)}
           disabled={!anyChecked}
-          accessibilityRole="button"
+          haptic="medium"
           style={[styles.reset, !anyChecked && styles.resetDisabled]}
         >
           <Text style={styles.resetText}>Reset</Text>
-        </Pressable>
+        </Touchable>
       </View>
 
       <View style={styles.list}>
@@ -87,7 +88,9 @@ export function RoutineCard({ addSignal }: { addSignal: number }) {
             >
               <View>
                 <View style={styles.row}>
-                  <Pressable
+                  <Touchable
+                    variant="control"
+                    haptic="selection"
                     onPress={() => routine.setChecked(item.id, !item.completed_at)}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: Boolean(item.completed_at) }}
@@ -100,31 +103,31 @@ export function RoutineCard({ addSignal }: { addSignal: number }) {
                       size={24}
                       color={item.completed_at ? colors.text : colors.textSecondary}
                     />
-                  </Pressable>
-                  <Pressable
+                  </Touchable>
+                  <Touchable
+                    variant="row"
                     style={styles.itemTextWrap}
                     onLongPress={() => setMenuForId((id) => (id === item.id ? null : item.id))}
-                    accessibilityRole="button"
                     accessibilityLabel={`${item.title}${item.completed_at ? ", checked" : ""}`}
                     accessibilityHint="Double tap and hold for more actions"
                   >
                     <Text style={[styles.itemText, item.completed_at && styles.itemTextDone]}>
                       {item.title}
                     </Text>
-                  </Pressable>
+                  </Touchable>
                 </View>
                 {menuForId === item.id ? (
                   <View style={styles.menu}>
-                    <Pressable
+                    <Touchable
+                      variant="row"
                       onPress={() => {
                         setMenuForId(null);
                         remove(item.id);
                       }}
-                      accessibilityRole="button"
                       style={styles.menuAction}
                     >
                       <Text style={styles.menuActionText}>Delete</Text>
-                    </Pressable>
+                    </Touchable>
                   </View>
                 ) : null}
               </View>
@@ -151,9 +154,9 @@ export function RoutineCard({ addSignal }: { addSignal: number }) {
             style={styles.input}
           />
           {draft.trim() ? (
-            <Pressable onPress={submitDraft} accessibilityRole="button" style={styles.add}>
+            <Touchable onPress={submitDraft} haptic="success" style={styles.add}>
               <Text style={styles.addText}>Add</Text>
-            </Pressable>
+            </Touchable>
           ) : null}
         </View>
       </View>

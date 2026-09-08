@@ -1,6 +1,7 @@
 import { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
+import { Touchable } from "@/components/ui/Touchable";
 import type { AgendaItem } from "@/domain/agenda";
 import { monthGrid, weekdayLabels } from "@/domain/calendarGrid";
 import type { ISODate } from "@/domain/date";
@@ -43,10 +44,11 @@ export function MonthGrid({ anchor, selected, items, onSelect }: MonthGridProps)
           const dayItems = byDate.get(cell.date) ?? [];
           const isSelected = cell.date === selected;
           return (
-            <Pressable
+            <Touchable
               key={cell.date}
+              variant="row"
+              haptic="selection"
               onPress={() => onSelect(cell.date)}
-              accessibilityRole="button"
               accessibilityLabel={cell.date}
               accessibilityState={{ selected: isSelected }}
               style={[styles.cell, isSelected && styles.cellSelected]}
@@ -69,7 +71,7 @@ export function MonthGrid({ anchor, selected, items, onSelect }: MonthGridProps)
                   />
                 ))}
               </View>
-            </Pressable>
+            </Touchable>
           );
         })}
       </View>

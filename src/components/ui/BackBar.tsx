@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { Touchable } from "@/components/ui/Touchable";
 import { colors, layoutTokens, spacing, typography } from "@/theme/tokens";
 
 export type BackBarProps = {
@@ -19,16 +20,15 @@ export function BackBar({ title, subtitle, right }: BackBarProps) {
   return (
     <SafeAreaView edges={["top"]} style={styles.safe}>
       <View style={styles.bar}>
-        <Pressable
+        <Touchable
           onPress={() => router.back()}
-          accessibilityRole="button"
           accessibilityLabel="Back"
           hitSlop={10}
           style={styles.back}
         >
           <PlatformIcon sf="chevron.left" ion="chevron-back" size={22} color={colors.text} />
           <Text style={styles.backText}>Back</Text>
-        </Pressable>
+        </Touchable>
         <View style={styles.titleWrap}>
           <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
             {title}

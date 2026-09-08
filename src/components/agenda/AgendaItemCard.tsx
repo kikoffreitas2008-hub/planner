@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { ColorDot } from "@/components/ui/ColorDot";
 import { ColorPickerSheet } from "@/components/ui/ColorPickerSheet";
 import { GlossyCard } from "@/components/ui/GlossyCard";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { Touchable } from "@/components/ui/Touchable";
 import type { AgendaItem } from "@/domain/agenda";
 import { formatClock } from "@/lib/today";
 import { colors, palette, radius, spacing, typography, type PaletteKey } from "@/theme/tokens";
@@ -51,10 +52,10 @@ export function AgendaItemCard({
         <View style={styles.headerRow}>
           {/* Tapping the title/notes area edits the item; kept separate from the
               colour, time-capsule and menu controls so no button nests another. */}
-          <Pressable
+          <Touchable
+            variant="row"
             onPress={onEdit}
             onLongPress={() => setMenuOpen((open) => !open)}
-            accessibilityRole="button"
             accessibilityLabel={[
               `${item.itemKind === "event" ? "Event" : "To-do"}: ${item.title}`,
               timeLabel(item),
@@ -86,19 +87,18 @@ export function AgendaItemCard({
             >
               {item.title}
             </Text>
-          </Pressable>
+          </Touchable>
 
           <View style={styles.timeWrap}>
             {done ? <PlatformIcon sf="checkmark" ion="checkmark" size={16} color={ink} /> : null}
             {editMode && !item.allDay ? (
-              <Pressable
+              <Touchable
                 onPress={onEditTime}
-                accessibilityRole="button"
                 accessibilityLabel={`Edit time, currently ${timeLabel(item)}`}
                 style={styles.capsule}
               >
                 <Text style={[styles.time, { color: ink }]}>{timeLabel(item)}</Text>
-              </Pressable>
+              </Touchable>
             ) : (
               <Text style={[styles.time, { color: ink }]}>{timeLabel(item)}</Text>
             )}
@@ -111,11 +111,11 @@ export function AgendaItemCard({
         </View>
 
         {item.notes ? (
-          <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel="Edit notes">
+          <Touchable variant="row" onPress={onEdit} accessibilityLabel="Edit notes">
             <Text style={[styles.notes, { color: ink }]} numberOfLines={3}>
               {item.notes}
             </Text>
-          </Pressable>
+          </Touchable>
         ) : null}
 
         {menuOpen ? (
@@ -141,9 +141,9 @@ export function AgendaItemCard({
 
 function MenuAction({ label, onPress, ink }: { label: string; onPress: () => void; ink: string }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={styles.menuAction}>
+    <Touchable variant="row" onPress={onPress} style={styles.menuAction}>
       <Text style={[styles.menuActionText, { color: ink }]}>{label}</Text>
-    </Pressable>
+    </Touchable>
   );
 }
 

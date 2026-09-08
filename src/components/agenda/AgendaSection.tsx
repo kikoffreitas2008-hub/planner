@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { generateKeyBetween } from "fractional-indexing";
 
 import { AgendaItemCard } from "@/components/agenda/AgendaItemCard";
@@ -7,6 +7,7 @@ import { SwipeableRow } from "@/components/agenda/SwipeableRow";
 import { swipedRecently } from "@/components/agenda/swipeGuard";
 import { TimeEditModal } from "@/components/agenda/TimeEditModal";
 import { DraggableColumn } from "@/components/projects/DraggableColumn";
+import { Touchable } from "@/components/ui/Touchable";
 import { useDayAgenda } from "@/data/agenda";
 import { calendarItems, projectItems, settings } from "@/data/repositories";
 import { getDatabase, useUserSettings } from "@/data/store";
@@ -97,33 +98,32 @@ export function AgendaSection({
       <View style={styles.headerRow}>
         <Text style={styles.heading}>To-do</Text>
         <View style={styles.controls}>
-          <Pressable
+          <Touchable
             onPress={() => settings.setDayManualOrder(date, false)}
-            accessibilityRole="button"
+            haptic="selection"
             accessibilityState={{ selected: !manualOrdered }}
             style={[styles.controlButton, !manualOrdered && styles.controlButtonOn]}
           >
             <Text style={[styles.controlText, !manualOrdered && styles.controlTextOn]}>
               By time
             </Text>
-          </Pressable>
-          <Pressable
+          </Touchable>
+          <Touchable
             onPress={isPlanningTomorrow ? onExitPlanTomorrow : onPlanTomorrow}
-            accessibilityRole="button"
             style={styles.controlButton}
           >
             <Text style={styles.controlText}>
               {isPlanningTomorrow ? "Back to today" : "Plan tomorrow"}
             </Text>
-          </Pressable>
-          <Pressable
+          </Touchable>
+          <Touchable
             onPress={() => setEditMode((on) => !on)}
-            accessibilityRole="button"
+            haptic="selection"
             accessibilityState={{ selected: editMode }}
             style={styles.controlButton}
           >
             <Text style={styles.controlText}>{editMode ? "Done" : "Edit"}</Text>
-          </Pressable>
+          </Touchable>
         </View>
       </View>
 

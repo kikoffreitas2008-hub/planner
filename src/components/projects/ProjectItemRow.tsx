@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { importanceColor, importanceLabel } from "@/components/projects/ImportancePicker";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { Touchable } from "@/components/ui/Touchable";
 import { projectItems } from "@/data/repositories";
 import { formatDuration } from "@/domain/duration";
 import type { ProjectItem } from "@/domain/entities";
@@ -22,7 +23,9 @@ export function ProjectItemRow({ item, layout, onOpen, subtaskCount }: ProjectIt
   const done = Boolean(item.completed_at);
 
   const circle = (
-    <Pressable
+    <Touchable
+      variant="control"
+      haptic="selection"
       onPress={() => projectItems.setCompleted(item.id, !done)}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: done }}
@@ -35,14 +38,14 @@ export function ProjectItemRow({ item, layout, onOpen, subtaskCount }: ProjectIt
         size={22}
         color={done ? colors.text : colors.textSecondary}
       />
-    </Pressable>
+    </Touchable>
   );
 
   if (layout === "table") {
     return (
       <View style={[styles.tableRow, done && styles.done]}>
         {circle}
-        <Pressable onPress={onOpen} style={styles.tableTap} accessibilityRole="button">
+        <Touchable variant="row" onPress={onOpen} style={styles.tableTap}>
           <Text style={[styles.cellName, done && styles.strike]} numberOfLines={1}>
             {item.title}
           </Text>
@@ -56,7 +59,7 @@ export function ProjectItemRow({ item, layout, onOpen, subtaskCount }: ProjectIt
             {item.notes ?? ""}
           </Text>
           <Text style={styles.cell}>{item.scheduled_date ?? "—"}</Text>
-        </Pressable>
+        </Touchable>
       </View>
     );
   }
@@ -64,7 +67,7 @@ export function ProjectItemRow({ item, layout, onOpen, subtaskCount }: ProjectIt
   return (
     <View style={[styles.compactRow, done && styles.done]}>
       {circle}
-      <Pressable onPress={onOpen} style={styles.compactBody} accessibilityRole="button">
+      <Touchable variant="row" onPress={onOpen} style={styles.compactBody}>
         <Text style={[styles.name, done && styles.strike]} numberOfLines={1}>
           {item.title}
         </Text>
@@ -85,7 +88,7 @@ export function ProjectItemRow({ item, layout, onOpen, subtaskCount }: ProjectIt
           ) : null}
           {item.notes ? <Text style={styles.meta}>Notes</Text> : null}
         </View>
-      </Pressable>
+      </Touchable>
       <PlatformIcon sf="chevron.right" ion="chevron-forward" size={16} color={colors.textSecondary} />
     </View>
   );

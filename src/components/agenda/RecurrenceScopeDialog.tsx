@@ -1,5 +1,6 @@
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Touchable } from "@/components/ui/Touchable";
 import type { RecurrenceScope } from "@/domain/recurrenceMutation";
 import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
 
@@ -30,18 +31,18 @@ export function RecurrenceScopeDialog({
         <View style={styles.card}>
           <Text style={styles.title}>{action === "delete" ? "Delete" : "Apply changes to"}</Text>
           {OPTIONS.map((option) => (
-            <Pressable
+            <Touchable
               key={option.scope}
+              variant="row"
               onPress={() => onPick(option.scope)}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
+              style={styles.option}
             >
               <Text style={styles.optionText}>{option.label}</Text>
-            </Pressable>
+            </Touchable>
           ))}
-          <Pressable onPress={onCancel} accessibilityRole="button" style={styles.cancel}>
+          <Touchable onPress={onCancel} style={styles.cancel}>
             <Text style={styles.cancelText}>Cancel</Text>
-          </Pressable>
+          </Touchable>
         </View>
       </View>
     </Modal>
@@ -74,9 +75,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.sm,
     borderRadius: radius.small,
-  },
-  optionPressed: {
-    backgroundColor: colors.mutedSurface,
   },
   optionText: {
     ...typography.body,

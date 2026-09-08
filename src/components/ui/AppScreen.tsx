@@ -30,6 +30,13 @@ export function AppScreen({
     <ScrollView
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      contentInsetAdjustmentBehavior="automatic"
+      // iOS momentum without the "sticks then jumps" feel on a short list.
+      decelerationRate="normal"
+      scrollEventThrottle={16}
+      overScrollMode="never"
     >
       {children}
     </ScrollView>
@@ -42,10 +49,14 @@ export function AppScreen({
       <View style={styles.column}>
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.title} accessibilityRole="header">
+            <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
               {title}
             </Text>
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+            {subtitle ? (
+              <Text style={styles.subtitle} numberOfLines={1}>
+                {subtitle}
+              </Text>
+            ) : null}
           </View>
           {headerRight ? <View style={styles.headerRight}>{headerRight}</View> : null}
         </View>
@@ -76,6 +87,10 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flexShrink: 1,
+    // Give the title a hard right edge to truncate against so it never wraps
+    // under the header controls.
+    flexGrow: 1,
+    marginRight: spacing.sm,
   },
   title: {
     ...typography.title,
@@ -91,6 +106,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.xs,
     paddingTop: spacing.xxs,
+    flexShrink: 0,
   },
   scrollContent: {
     paddingBottom: spacing.xl,

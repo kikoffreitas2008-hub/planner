@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { PickerField } from "@/components/ui/PickerField";
+import { Touchable } from "@/components/ui/Touchable";
 import { requestNotificationPermission } from "@/data/notifications";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
 
@@ -59,15 +60,16 @@ export function NotificationField({ value, onChange }: NotificationFieldProps) {
         {OPTIONS.map((option) => {
           const on = selected.includes(option.minutes);
           return (
-            <Pressable
+            <Touchable
               key={option.minutes}
+              haptic="selection"
               onPress={() => toggle(option.minutes)}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: on }}
               style={[styles.chip, on && styles.chipOn]}
             >
               <Text style={[styles.chipText, on && styles.chipTextOn]}>{option.label}</Text>
-            </Pressable>
+            </Touchable>
           );
         })}
       </View>

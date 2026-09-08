@@ -1,14 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Modal, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
 import { NotificationField } from "@/components/agenda/NotificationField";
 import { RecurrenceField } from "@/components/agenda/RecurrenceField";
@@ -17,6 +8,7 @@ import { ColorDot } from "@/components/ui/ColorDot";
 import { DatePickerCalendar } from "@/components/ui/DatePickerCalendar";
 import { PickerField } from "@/components/ui/PickerField";
 import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
+import { Touchable } from "@/components/ui/Touchable";
 import type { AgendaItem } from "@/domain/agenda";
 import type { ISODate } from "@/domain/date";
 import type { PaletteColor } from "@/domain/entities";
@@ -169,19 +161,19 @@ export function AgendaFormModal({
             <Text style={styles.sheetTitle}>
               {editing ? "Edit" : itemType === "event" ? "New event" : "New to-do"}
             </Text>
-            <Pressable onPress={onCancel} accessibilityRole="button" accessibilityLabel="Close">
+            <Touchable onPress={onCancel} accessibilityLabel="Close">
               <Text style={styles.close}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
 
           <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
             <View style={styles.segment}>
               {(["task", "event"] as const).map((option) => (
-                <Pressable
+                <Touchable
                   key={option}
+                  haptic="selection"
                   onPress={() => setItemType(option)}
                   style={[styles.segmentButton, itemType === option && styles.segmentButtonActive]}
-                  accessibilityRole="button"
                   accessibilityState={{ selected: itemType === option }}
                 >
                   <Text
@@ -192,7 +184,7 @@ export function AgendaFormModal({
                   >
                     {option === "task" ? "To-do" : "Event"}
                   </Text>
-                </Pressable>
+                </Touchable>
               ))}
             </View>
 
@@ -234,15 +226,15 @@ export function AgendaFormModal({
             ) : null}
 
             {!allDay && !validation.ok && validation.needsMidnight ? (
-              <Pressable
+              <Touchable
+                variant="row"
                 onPress={() => setConfirmMidnight(true)}
                 style={styles.midnightConfirm}
-                accessibilityRole="button"
               >
                 <Text style={styles.midnightText}>
                   Ends the next day — tap to confirm it crosses midnight.
                 </Text>
-              </Pressable>
+              </Touchable>
             ) : null}
 
             {itemType === "event" ? (
@@ -260,16 +252,16 @@ export function AgendaFormModal({
             <Field label="Colour">
               <View style={styles.swatches}>
                 {PALETTE_KEYS.map((key) => (
-                  <Pressable
+                  <Touchable
                     key={key}
+                    haptic="selection"
                     onPress={() => setColor(key)}
                     style={[styles.swatch, color === key && styles.swatchActive]}
-                    accessibilityRole="button"
                     accessibilityLabel={key}
                     accessibilityState={{ selected: color === key }}
                   >
                     <ColorDot color={key} size={22} />
-                  </Pressable>
+                  </Touchable>
                 ))}
               </View>
             </Field>
@@ -290,14 +282,14 @@ export function AgendaFormModal({
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <Pressable onPress={submit} style={styles.saveButton} accessibilityRole="button">
+            <Touchable onPress={submit} haptic="success" style={styles.saveButton}>
               <Text style={styles.saveText}>Save</Text>
-            </Pressable>
+            </Touchable>
 
             {editing && onDelete ? (
-              <Pressable onPress={requestDelete} style={styles.deleteButton} accessibilityRole="button">
+              <Touchable onPress={requestDelete} haptic="warning" style={styles.deleteButton}>
                 <Text style={styles.deleteText}>Delete</Text>
-              </Pressable>
+              </Touchable>
             ) : null}
           </ScrollView>
         </View>

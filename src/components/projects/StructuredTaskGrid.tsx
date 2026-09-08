@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { GlossyCard } from "@/components/ui/GlossyCard";
+import { Touchable } from "@/components/ui/Touchable";
 import { projectItems } from "@/data/repositories";
 import { useTable } from "@/data/store";
 import type { Project, ProjectItem } from "@/domain/entities";
@@ -56,12 +57,12 @@ export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTas
             const count = subtaskCount(task.id);
             const done = Boolean(task.completed_at);
             return (
-              <Pressable
+              <Touchable
                 key={task.id}
+                variant="card"
                 onPress={() => onOpenTask(task.id)}
-                accessibilityRole="button"
                 accessibilityLabel={task.title}
-                style={done && styles.done}
+                style={done ? styles.done : undefined}
               >
                 <GlossyCard color={project.color} style={{ width: size, height: size }}>
                   <View style={styles.taskBody}>
@@ -73,7 +74,7 @@ export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTas
                     </Text>
                   </View>
                 </GlossyCard>
-              </Pressable>
+              </Touchable>
             );
           })}
         </View>
@@ -91,9 +92,9 @@ export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTas
           style={styles.addInput}
         />
         {draft.trim() ? (
-          <Pressable onPress={addTask} accessibilityRole="button" style={styles.addButton}>
+          <Touchable onPress={addTask} haptic="success" style={styles.addButton}>
             <Text style={styles.addButtonText}>Add</Text>
-          </Pressable>
+          </Touchable>
         ) : null}
       </View>
     </View>

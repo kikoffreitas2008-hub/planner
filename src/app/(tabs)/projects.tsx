@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import { useRouter } from "expo-router";
 
 import { ArchivedProjectsSheet } from "@/components/projects/ArchivedProjectsSheet";
@@ -8,6 +8,7 @@ import { ProjectGrid } from "@/components/projects/ProjectGrid";
 import { GlobalSearchButton } from "@/components/search/GlobalSearchButton";
 import { AppScreen } from "@/components/ui/AppScreen";
 import { RoundIconButton } from "@/components/ui/RoundIconButton";
+import { Touchable } from "@/components/ui/Touchable";
 import { useActiveProjects, useArchivedProjects } from "@/data/projects";
 import { settings } from "@/data/repositories";
 import { useUserSettings } from "@/data/store";
@@ -28,14 +29,14 @@ export default function ProjectsScreen() {
       title="Projects"
       headerRight={
         <>
-          <Pressable
+          <Touchable
             onPress={() => settings.update({ project_progress_visible: !showProgress })}
-            accessibilityRole="button"
+            haptic="selection"
             accessibilityState={{ selected: showProgress }}
             style={[styles.toggle, showProgress && styles.toggleOn]}
           >
             <Text style={[styles.toggleText, showProgress && styles.toggleTextOn]}>Progress</Text>
-          </Pressable>
+          </Touchable>
           <GlobalSearchButton />
           <RoundIconButton
             sf="plus"

@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 
+import { Touchable } from "@/components/ui/Touchable";
 import { sendCode, verifyCode } from "@/data/auth";
 import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
 
@@ -53,9 +54,9 @@ export function SignInSheet({ onClose }: { onClose: () => void }) {
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>{step === "email" ? "Sign in" : "Enter the code"}</Text>
-            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+            <Touchable onPress={onClose} accessibilityLabel="Close">
               <Text style={styles.close}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
 
           {step === "email" ? (
@@ -86,9 +87,9 @@ export function SignInSheet({ onClose }: { onClose: () => void }) {
                 style={[styles.input, styles.code]}
               />
               <Action label="Verify" onPress={submitCode} busy={busy} disabled={code.length < 4} />
-              <Pressable onPress={() => setStep("email")} accessibilityRole="button" style={styles.back}>
+              <Touchable variant="row" onPress={() => setStep("email")} style={styles.back}>
                 <Text style={styles.backText}>Use a different email</Text>
-              </Pressable>
+              </Touchable>
             </>
           )}
 
@@ -111,10 +112,10 @@ function Action({
   disabled: boolean;
 }) {
   return (
-    <Pressable
+    <Touchable
       onPress={onPress}
       disabled={busy || disabled}
-      accessibilityRole="button"
+      haptic="success"
       style={[styles.button, (busy || disabled) && styles.buttonDisabled]}
     >
       {busy ? (
@@ -122,7 +123,7 @@ function Action({
       ) : (
         <Text style={styles.buttonText}>{label}</Text>
       )}
-    </Pressable>
+    </Touchable>
   );
 }
 

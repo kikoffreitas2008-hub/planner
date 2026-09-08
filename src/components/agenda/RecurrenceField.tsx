@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { DatePickerCalendar } from "@/components/ui/DatePickerCalendar";
 import { PickerField } from "@/components/ui/PickerField";
+import { Touchable } from "@/components/ui/Touchable";
 import type { ISODate } from "@/domain/date";
 import type { RecurrenceRule } from "@/domain/recurrence";
 import { buildRule, describeRule, parseRule, ruleKind, type RuleKind } from "@/lib/recurrence";
@@ -41,17 +42,17 @@ export function RecurrenceField({ value, onChange }: RecurrenceFieldProps) {
       <View style={styles.body}>
         <View style={styles.chips}>
           {KINDS.map((option) => (
-            <Pressable
+            <Touchable
               key={option.key}
+              haptic="selection"
               onPress={() => commit(option.key, interval, end)}
-              accessibilityRole="button"
               accessibilityState={{ selected: kind === option.key }}
               style={[styles.chip, kind === option.key && styles.chipOn]}
             >
               <Text style={[styles.chipText, kind === option.key && styles.chipTextOn]}>
                 {option.label}
               </Text>
-            </Pressable>
+            </Touchable>
           ))}
         </View>
 
@@ -68,8 +69,9 @@ export function RecurrenceField({ value, onChange }: RecurrenceFieldProps) {
             <Text style={styles.stepLabel}>Ends</Text>
             <View style={styles.chips}>
               {(["never", "date", "count"] as const).map((endKind) => (
-                <Pressable
+                <Touchable
                   key={endKind}
+                  haptic="selection"
                   onPress={() =>
                     commit(
                       kind,
@@ -81,14 +83,13 @@ export function RecurrenceField({ value, onChange }: RecurrenceFieldProps) {
                           : { kind: "count", count: end.kind === "count" ? end.count : 10 },
                     )
                   }
-                  accessibilityRole="button"
                   accessibilityState={{ selected: end.kind === endKind }}
                   style={[styles.chip, end.kind === endKind && styles.chipOn]}
                 >
                   <Text style={[styles.chipText, end.kind === endKind && styles.chipTextOn]}>
                     {endKind === "never" ? "Never" : endKind === "date" ? "On date" : "After N"}
                   </Text>
-                </Pressable>
+                </Touchable>
               ))}
             </View>
 
@@ -126,23 +127,21 @@ function Stepper({
 }) {
   return (
     <View style={styles.stepper}>
-      <Pressable
+      <Touchable
         onPress={() => onChange(Math.max(min, value - 1))}
-        accessibilityRole="button"
         accessibilityLabel="Less"
         style={styles.stepButton}
       >
         <Text style={styles.stepButtonText}>−</Text>
-      </Pressable>
+      </Touchable>
       <Text style={styles.stepValue}>{value}</Text>
-      <Pressable
+      <Touchable
         onPress={() => onChange(value + 1)}
-        accessibilityRole="button"
         accessibilityLabel="More"
         style={styles.stepButton}
       >
         <Text style={styles.stepButtonText}>+</Text>
-      </Pressable>
+      </Touchable>
     </View>
   );
 }

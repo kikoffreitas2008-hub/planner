@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
+import { Touchable } from "@/components/ui/Touchable";
 import type { AgendaItem } from "@/domain/agenda";
 import { validateTimeRange } from "@/domain/timeRange";
 import { formatClock } from "@/lib/today";
@@ -37,15 +38,14 @@ export function TimeEditModal({ visible, item, onSave, onClose }: TimeEditModalP
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} accessibilityLabel="Close" onPress={onClose} />
         <View style={styles.card}>
-          <Pressable
+          <Touchable
             onPress={onClose}
             style={styles.close}
-            accessibilityRole="button"
             accessibilityLabel="Close"
             hitSlop={10}
           >
             <Text style={styles.closeText}>✕</Text>
-          </Pressable>
+          </Touchable>
 
           <Text style={styles.heading}>Time</Text>
 
@@ -57,26 +57,26 @@ export function TimeEditModal({ visible, item, onSave, onClose }: TimeEditModalP
           />
 
           {!result.valid && result.requiresCrossMidnightConfirmation ? (
-            <Pressable
+            <Touchable
+              variant="row"
               onPress={() => setConfirmMidnight(true)}
               style={styles.midnight}
-              accessibilityRole="button"
             >
               <Text style={styles.midnightText}>Ends the next day — tap to confirm.</Text>
-            </Pressable>
+            </Touchable>
           ) : null}
           {!result.valid && !result.requiresCrossMidnightConfirmation ? (
             <Text style={styles.error}>{result.reason}</Text>
           ) : null}
 
-          <Pressable
+          <Touchable
             onPress={save}
             disabled={!result.valid}
+            haptic="success"
             style={[styles.save, !result.valid && styles.saveDisabled]}
-            accessibilityRole="button"
           >
             <Text style={styles.saveText}>Save</Text>
-          </Pressable>
+          </Touchable>
         </View>
       </View>
     </Modal>

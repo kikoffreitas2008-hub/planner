@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 
 import { SignInSheet } from "@/components/auth/SignInSheet";
+import { Touchable } from "@/components/ui/Touchable";
 import { deleteAccount, signOut, useAuth } from "@/data/auth";
 import { exportAndDownloadWeb } from "@/data/export";
 import { refreshNotifications, requestNotificationPermission } from "@/data/notifications";
@@ -32,9 +33,9 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>Settings</Text>
-            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+            <Touchable onPress={onClose} accessibilityLabel="Close">
               <Text style={styles.close}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
 
           <ScrollView contentContainerStyle={styles.body}>
@@ -115,7 +116,7 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
                     Delete your account and cloud data permanently?
                   </Text>
                   <View style={styles.confirmRow}>
-                    <Pressable
+                    <Touchable
                       onPress={async () => {
                         setBusy(true);
                         try {
@@ -126,22 +127,22 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
                         }
                       }}
                       disabled={busy}
-                      accessibilityRole="button"
+                      haptic="warning"
                       style={styles.confirmDelete}
                     >
                       <Text style={styles.confirmDeleteText}>Delete account</Text>
-                    </Pressable>
+                    </Touchable>
                     <Row label="Cancel" onPress={() => setConfirmDelete(false)} />
                   </View>
                 </View>
               ) : (
-                <Pressable
+                <Touchable
+                  variant="row"
                   onPress={() => setConfirmDelete(true)}
-                  accessibilityRole="button"
                   style={styles.row}
                 >
                   <Text style={[styles.value, styles.danger]}>Delete account</Text>
-                </Pressable>
+                </Touchable>
               )
             ) : null}
           </ScrollView>
@@ -155,9 +156,9 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
 
 function Row({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={styles.row}>
+    <Touchable variant="row" onPress={onPress} style={styles.row}>
       <Text style={styles.value}>{label}</Text>
-    </Pressable>
+    </Touchable>
   );
 }
 

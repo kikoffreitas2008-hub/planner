@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { useLocalSearchParams } from "expo-router";
 
 import { AgendaFormModal, type AgendaFormResult } from "@/components/agenda/AgendaFormModal";
@@ -9,6 +10,8 @@ import { AppScreen } from "@/components/ui/AppScreen";
 import { GlobalSearchButton } from "@/components/search/GlobalSearchButton";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { PlusMenu } from "@/components/ui/PlusMenu";
+import { Touchable } from "@/components/ui/Touchable";
+import { ViewSwitcher } from "@/components/ui/ViewSwitcher";
 import { useDayAgenda, useRangeAgenda } from "@/data/agenda";
 import { applyFormEdit, createFromForm, deleteAgendaItem } from "@/data/agendaEdit";
 import { useUserSettings } from "@/data/store";
@@ -19,13 +22,12 @@ import {
   monthGrid,
   moveCalendarAnchor,
   weekRange,
+  type CalendarView,
 } from "@/domain/calendarGrid";
 import type { ISODate } from "@/domain/date";
 import type { RecurrenceScope } from "@/domain/recurrenceMutation";
 import { formatClock, formatDMY, nextDate, previousDate, todayInLisbon } from "@/lib/today";
-import { colors, palette, radius, spacing, typography } from "@/theme/tokens";
-
-type CalendarView = "month" | "week" | "day";
+import { colors, palette, spacing, typography } from "@/theme/tokens";
 
 type FormState =
   | null
@@ -33,7 +35,9 @@ type FormState =
   | { mode: "edit"; item: AgendaItem };
 
 export default function CalendarScreen() {
-  const defaultView = useUserSettings()?.default_calendar_view ?? "month";
+  const settings = useUserSettings();
+  const defaultView = settings?.default_calendar_view ?? "month";
+  const reduceMotion = settings?.reduce_motion ?? false;
   // A search result can deep-link here with ?date=YYYY-MM-DD&view=day.
   const params = useLocalSearchParams<{ date?: string; view?: string }>();
   const [view, setView] = useState<CalendarView>(() =>
@@ -99,21 +103,7 @@ export default function CalendarScreen() {
       scroll={view === "month"}
       headerRight={
         <>
-          <View style={styles.viewSwitch}>
-            {(["month", "week", "day"] as const).map((option) => (
-              <Pressable
-                key={option}
-                onPress={() => setView(option)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: view === option }}
-                style={[styles.viewButton, view === option && styles.viewButtonOn]}
-              >
-                <Text style={[styles.viewText, view === option && styles.viewTextOn]}>
-                  {option[0].toUpperCase()}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          <ViewSwitcher value={view} onChange={setView} />
           <GlobalSearchButton />
           <PlusMenu
             options={[
@@ -133,64 +123,84 @@ export default function CalendarScreen() {
       }
     >
       <View style={styles.navRow}>
-        <Pressable onPress={() => shift(-1)} accessibilityRole="button" accessibilityLabel="Previous" hitSlop={8}>
+        <Touchable
+          onPress={() => shift(-1)}
+          accessibilityLabel="Previous"
+          hitSlop={12}
+          style={styles.navArrow}
+        >
           <PlatformIcon sf="chevron.left" ion="chevron-back" size={20} color={colors.text} />
-        </Pressable>
-        <Text style={styles.navLabel}>{label}</Text>
-        <Pressable onPress={() => shift(1)} accessibilityRole="button" accessibilityLabel="Next" hitSlop={8}>
+        </Touchable>
+        <Text style={styles.navLabel} numberOfLines={1}>
+          {label}
+        </Text>
+        <Touchable
+          onPress={() => shift(1)}
+          accessibilityLabel="Next"
+          hitSlop={12}
+          style={styles.navArrow}
+        >
           <PlatformIcon sf="chevron.right" ion="chevron-forward" size={20} color={colors.text} />
-        </Pressable>
+        </Touchable>
       </View>
 
-      {view === "month" ? (
-        <>
-          <MonthGrid
+      <Animated.View
+        // Re-key on the view so Month↔Week↔Day crossfades; date shifts within
+        // a view update in place (the timeline animates its own transition).
+        key={reduceMotion ? undefined : view}
+        entering={reduceMotion ? undefined : FadeIn.duration(180)}
+        style={styles.viewBody}
+      >
+        {view === "month" ? (
+          <>
+            <MonthGrid
+              anchor={focusDate}
+              selected={focusDate}
+              items={rangeItems}
+              onSelect={setFocusDate}
+            />
+            <View style={styles.dayList}>
+              <Text style={styles.dayListHeading}>{calendarDayLabel(focusDate)}</Text>
+              {dayItems.length === 0 ? (
+                <Text style={styles.empty}>Nothing on this day.</Text>
+              ) : (
+                dayItems.map((item) => (
+                  <Touchable
+                    key={item.occurrenceId}
+                    variant="row"
+                    onPress={() => setForm({ mode: "edit", item })}
+                    style={styles.dayRow}
+                  >
+                    <View style={[styles.rowDot, { backgroundColor: palette[item.color].start }]} />
+                    <Text style={styles.rowTitle} numberOfLines={1}>
+                      {item.completedAt ? "✓ " : ""}
+                      {item.title}
+                    </Text>
+                    <Text style={styles.rowTime}>
+                      {item.allDay
+                        ? "All day"
+                        : item.startsAt
+                          ? formatClock(item.startsAt)
+                          : ""}
+                    </Text>
+                  </Touchable>
+                ))
+              )}
+            </View>
+          </>
+        ) : (
+          <TimelineView
+            mode={view}
             anchor={focusDate}
-            selected={focusDate}
             items={rangeItems}
-            onSelect={setFocusDate}
+            onOpenItem={(item) => setForm({ mode: "edit", item })}
+            onSelectDay={(day) => {
+              setFocusDate(day);
+              setView("day");
+            }}
           />
-          <View style={styles.dayList}>
-            <Text style={styles.dayListHeading}>{calendarDayLabel(focusDate)}</Text>
-            {dayItems.length === 0 ? (
-              <Text style={styles.empty}>Nothing on this day.</Text>
-            ) : (
-              dayItems.map((item) => (
-                <Pressable
-                  key={item.occurrenceId}
-                  onPress={() => setForm({ mode: "edit", item })}
-                  style={styles.dayRow}
-                  accessibilityRole="button"
-                >
-                  <View style={[styles.rowDot, { backgroundColor: palette[item.color].start }]} />
-                  <Text style={styles.rowTitle} numberOfLines={1}>
-                    {item.completedAt ? "✓ " : ""}
-                    {item.title}
-                  </Text>
-                  <Text style={styles.rowTime}>
-                    {item.allDay
-                      ? "All day"
-                      : item.startsAt
-                        ? formatClock(item.startsAt)
-                        : ""}
-                  </Text>
-                </Pressable>
-              ))
-            )}
-          </View>
-        </>
-      ) : (
-        <TimelineView
-          mode={view}
-          anchor={focusDate}
-          items={rangeItems}
-          onOpenItem={(item) => setForm({ mode: "edit", item })}
-          onSelectDay={(day) => {
-            setFocusDate(day);
-            setView("day");
-          }}
-        />
-      )}
+        )}
+      </Animated.View>
 
       {form ? (
         <AgendaFormModal
@@ -207,36 +217,26 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  viewSwitch: {
-    flexDirection: "row",
-    backgroundColor: colors.mutedSurface,
-    borderRadius: radius.pill,
-    padding: 2,
-  },
-  viewButton: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
-    borderRadius: radius.pill,
-  },
-  viewButtonOn: {
-    backgroundColor: colors.text,
-  },
-  viewText: {
-    ...typography.button,
-    color: colors.text,
-  },
-  viewTextOn: {
-    color: colors.surface,
-  },
   navRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: spacing.xs,
   },
+  navArrow: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   navLabel: {
     ...typography.heading,
     color: colors.text,
+    flex: 1,
+    textAlign: "center",
+  },
+  viewBody: {
+    gap: spacing.md,
   },
   dayList: {
     gap: spacing.xs,

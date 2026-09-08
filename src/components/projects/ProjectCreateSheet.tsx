@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ColorDot } from "@/components/ui/ColorDot";
+import { Touchable } from "@/components/ui/Touchable";
 import { projects } from "@/data/repositories";
 import { palette, colors, radius, shadow, spacing, typography, type PaletteKey } from "@/theme/tokens";
 
@@ -65,16 +66,15 @@ export function ProjectCreateSheet({ visible, onClose, onCreated }: ProjectCreat
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>New project</Text>
-            <Pressable
+            <Touchable
               onPress={() => {
                 reset();
                 onClose();
               }}
-              accessibilityRole="button"
               accessibilityLabel="Close"
             >
               <Text style={styles.close}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
 
           <View style={styles.form}>
@@ -114,24 +114,24 @@ export function ProjectCreateSheet({ visible, onClose, onCreated }: ProjectCreat
             <Text style={styles.fieldLabel}>Colour</Text>
             <View style={styles.swatches}>
               {PALETTE_KEYS.map((key) => (
-                <Pressable
+                <Touchable
                   key={key}
+                  haptic="selection"
                   onPress={() => setColor(key)}
-                  accessibilityRole="button"
                   accessibilityLabel={key}
                   accessibilityState={{ selected: color === key }}
                   style={[styles.swatch, color === key && styles.swatchActive]}
                 >
                   <ColorDot color={key} size={24} />
-                </Pressable>
+                </Touchable>
               ))}
             </View>
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <Pressable onPress={create} accessibilityRole="button" style={styles.createButton}>
+            <Touchable onPress={create} haptic="success" style={styles.createButton}>
               <Text style={styles.createText}>Create</Text>
-            </Pressable>
+            </Touchable>
           </View>
         </View>
       </View>
@@ -155,10 +155,10 @@ function Segmented({
       <Text style={styles.fieldLabel}>{label}</Text>
       <View style={styles.segment}>
         {options.map((option) => (
-          <Pressable
+          <Touchable
             key={option.key}
+            haptic="selection"
             onPress={() => onChange(option.key)}
-            accessibilityRole="button"
             accessibilityState={{ selected: value === option.key }}
             style={[styles.segmentButton, value === option.key && styles.segmentButtonActive]}
           >
@@ -167,7 +167,7 @@ function Segmented({
             >
               {option.label}
             </Text>
-          </Pressable>
+          </Touchable>
         ))}
       </View>
     </View>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { RoundIconButton } from "@/components/ui/RoundIconButton";
+import { Touchable } from "@/components/ui/Touchable";
 import { colors, layoutTokens, radius, shadow, spacing, typography } from "@/theme/tokens";
 
 export type PlusMenuOption = {
@@ -32,20 +33,21 @@ export function PlusMenu({ options }: { options: readonly PlusMenuOption[] }) {
           />
           <View style={styles.menu}>
             {options.map((option) => (
-              <Pressable
+              <Touchable
                 key={option.key}
+                variant="row"
                 disabled={option.disabled}
                 onPress={() => {
                   setOpen(false);
                   option.onPress();
                 }}
                 accessibilityRole="menuitem"
-                style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
+                style={styles.item}
               >
                 <Text style={[styles.itemText, option.disabled && styles.itemTextDisabled]}>
                   {option.label}
                 </Text>
-              </Pressable>
+              </Touchable>
             ))}
           </View>
         </View>
@@ -73,9 +75,6 @@ const styles = StyleSheet.create({
   item: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-  },
-  itemPressed: {
-    backgroundColor: colors.mutedSurface,
   },
   itemText: {
     ...typography.body,

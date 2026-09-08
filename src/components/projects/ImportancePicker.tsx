@@ -1,5 +1,6 @@
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Touchable } from "@/components/ui/Touchable";
 import type { ProjectItem } from "@/domain/entities";
 import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
 
@@ -36,19 +37,20 @@ export function ImportancePicker({ visible, value, onPick, onClose }: Importance
         <View style={styles.card}>
           <Text style={styles.title}>Importance</Text>
           {OPTIONS.map((option) => (
-            <Pressable
+            <Touchable
               key={option.label}
+              variant="row"
+              haptic="selection"
               onPress={() => {
                 onPick(option.value);
                 onClose();
               }}
-              accessibilityRole="button"
               accessibilityState={{ selected: option.value === value }}
-              style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
+              style={styles.option}
             >
               <Text style={[styles.optionText, { color: option.color }]}>{option.label}</Text>
               {option.value === value ? <Text style={styles.check}>✓</Text> : null}
-            </Pressable>
+            </Touchable>
           ))}
         </View>
       </View>
@@ -85,9 +87,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.sm,
     borderRadius: radius.small,
-  },
-  optionPressed: {
-    backgroundColor: colors.mutedSurface,
   },
   optionText: {
     ...typography.body,

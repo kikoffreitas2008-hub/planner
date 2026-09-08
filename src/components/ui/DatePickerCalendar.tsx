@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
+import { Touchable } from "@/components/ui/Touchable";
 import {
   calendarMonthLabel,
   monthGrid,
@@ -34,13 +35,13 @@ export function DatePickerCalendar({ value, onChange }: DatePickerCalendarProps)
   return (
     <View style={styles.wrap}>
       <View style={styles.header}>
-        <Pressable onPress={() => shift(-1)} accessibilityRole="button" accessibilityLabel="Previous month" hitSlop={8}>
+        <Touchable onPress={() => shift(-1)} accessibilityLabel="Previous month" hitSlop={8}>
           <PlatformIcon sf="chevron.left" ion="chevron-back" size={20} color={colors.text} />
-        </Pressable>
+        </Touchable>
         <Text style={styles.month}>{calendarMonthLabel(anchor)}</Text>
-        <Pressable onPress={() => shift(1)} accessibilityRole="button" accessibilityLabel="Next month" hitSlop={8}>
+        <Touchable onPress={() => shift(1)} accessibilityLabel="Next month" hitSlop={8}>
           <PlatformIcon sf="chevron.right" ion="chevron-forward" size={20} color={colors.text} />
-        </Pressable>
+        </Touchable>
       </View>
 
       <View style={styles.weekRow}>
@@ -55,10 +56,11 @@ export function DatePickerCalendar({ value, onChange }: DatePickerCalendarProps)
         {cells.map((cell) => {
           const selected = cell.date === value;
           return (
-            <Pressable
+            <Touchable
               key={cell.date}
+              variant="row"
+              haptic="selection"
               onPress={() => onChange(cell.date)}
-              accessibilityRole="button"
               accessibilityLabel={cell.date}
               accessibilityState={{ selected }}
               style={styles.cell}
@@ -75,7 +77,7 @@ export function DatePickerCalendar({ value, onChange }: DatePickerCalendarProps)
                   {cell.day}
                 </Text>
               </View>
-            </Pressable>
+            </Touchable>
           );
         })}
       </View>

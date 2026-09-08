@@ -40,6 +40,9 @@ export default function RootLayout() {
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: colors.background },
+            // Opening a task or project slides in from the right and back
+            // slides out — the iOS push/pop the app previously had none of.
+            animation: "slide_from_right",
           }}
         >
           <Stack.Screen name="(tabs)" />

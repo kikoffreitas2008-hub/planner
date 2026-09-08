@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { SwipeableRow } from "@/components/agenda/SwipeableRow";
 import { ColorDot } from "@/components/ui/ColorDot";
 import { ColorPickerSheet } from "@/components/ui/ColorPickerSheet";
 import { GlossyCard } from "@/components/ui/GlossyCard";
+import { Touchable } from "@/components/ui/Touchable";
 import { remember } from "@/data/repositories";
 import { useTable } from "@/data/store";
 import { offerUndo } from "@/data/undoBar";
@@ -69,11 +70,11 @@ export function RememberSection({ date }: { date: ISODate }) {
                     autoFocus
                   />
                 ) : (
-                  <Pressable
+                  <Touchable
+                    variant="row"
                     style={styles.textWrap}
                     onPress={() => setEditingId(item.id)}
                     onLongPress={() => setMenuForId((id) => (id === item.id ? null : item.id))}
-                    accessibilityRole="button"
                     accessibilityLabel={`Remember: ${item.title || "empty"}`}
                     accessibilityHint="Double tap to edit, or use the actions below to delete"
                   >
@@ -83,7 +84,7 @@ export function RememberSection({ date }: { date: ISODate }) {
                     >
                       {item.title || "…"}
                     </Text>
-                  </Pressable>
+                  </Touchable>
                 )}
                 <ColorDot
                   color={item.color}
@@ -93,18 +94,18 @@ export function RememberSection({ date }: { date: ISODate }) {
               </View>
               {menuForId === item.id ? (
                 <View style={styles.menu}>
-                  <Pressable
+                  <Touchable
+                    variant="row"
                     onPress={() => {
                       setMenuForId(null);
                       removeItem(item.id);
                     }}
-                    accessibilityRole="button"
                     style={styles.menuAction}
                   >
                     <Text style={[styles.menuActionText, { color: palette[item.color].ink }]}>
                       Delete
                     </Text>
-                  </Pressable>
+                  </Touchable>
                 </View>
               ) : null}
             </GlossyCard>

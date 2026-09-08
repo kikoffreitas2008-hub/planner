@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
+import { Touchable } from "@/components/ui/Touchable";
 import { palette, radius, type PaletteKey } from "@/theme/tokens";
 
 export type ColorDotProps = {
@@ -23,15 +24,15 @@ export function ColorDot({ color, size = 16, onPress, accessibilityLabel }: Colo
   if (!onPress) return dot;
 
   return (
-    <Pressable
+    <Touchable
       hitSlop={14}
+      haptic="selection"
       onPress={onPress}
-      accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? `Colour: ${color}`}
       style={styles.pressable}
     >
       {dot}
-    </Pressable>
+    </Touchable>
   );
 }
 

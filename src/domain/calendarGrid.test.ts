@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  CALENDAR_VIEWS,
+  calendarViewLabel,
   monthGrid,
   moveCalendarAnchor,
   selectCalendarDate,
@@ -59,4 +61,9 @@ test("there are seven weekday labels beginning with Monday", () => {
   assert.equal(labels.length, 7);
   assert.equal(labels[0].compact, "Mon");
   assert.equal(labels[6].compact, "Sun");
+});
+
+test("calendar views are ordered coarse to fine with capitalized labels", () => {
+  assert.deepEqual([...CALENDAR_VIEWS], ["month", "week", "day"]);
+  assert.deepEqual(CALENDAR_VIEWS.map(calendarViewLabel), ["Month", "Week", "Day"]);
 });

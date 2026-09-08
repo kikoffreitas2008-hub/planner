@@ -1,6 +1,8 @@
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Touchable } from "@/components/ui/Touchable";
 import { undoLast, useUndoBar } from "@/data/undoBar";
 import { colors, layoutTokens, radius, shadow, spacing, typography } from "@/theme/tokens";
 
@@ -16,12 +18,12 @@ export function UndoBar() {
 
   return (
     <View pointerEvents="box-none" style={[styles.wrap, { bottom: TAB_BAR_HEIGHT + bottomInset + spacing.sm }]}>
-      <View style={styles.bar}>
+      <Animated.View entering={FadeInDown.duration(200)} style={styles.bar}>
         <Text style={styles.message}>{message}</Text>
-        <Pressable onPress={undoLast} accessibilityRole="button" hitSlop={8}>
+        <Touchable onPress={undoLast} haptic="medium" hitSlop={8} style={styles.undoHit}>
           <Text style={styles.undo}>Undo</Text>
-        </Pressable>
-      </View>
+        </Touchable>
+      </Animated.View>
     </View>
   );
 }
@@ -53,6 +55,10 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.surface,
     flexShrink: 1,
+  },
+  undoHit: {
+    paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing.xxs,
   },
   undo: {
     ...typography.button,

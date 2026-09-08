@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { GlossyCard } from "@/components/ui/GlossyCard";
+import { Touchable } from "@/components/ui/Touchable";
 import { ProgressBar } from "@/components/projects/ProgressBar";
 import { useProjectProgress } from "@/data/projects";
 import type { Project } from "@/domain/entities";
@@ -20,7 +21,7 @@ export function ProjectCard({ project, size, showProgress, onPress, compact }: P
   const ink = palette[project.color].ink;
 
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={project.title}>
+    <Touchable variant="card" onPress={onPress} accessibilityLabel={project.title}>
       <GlossyCard color={project.color} style={{ width: size, height: size }}>
         <View style={[styles.body, !showProgress && styles.bodyCentered]}>
           <Text
@@ -39,7 +40,7 @@ export function ProjectCard({ project, size, showProgress, onPress, compact }: P
           ) : null}
         </View>
       </GlossyCard>
-    </Pressable>
+    </Touchable>
   );
 }
 

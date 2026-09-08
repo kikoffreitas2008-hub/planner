@@ -101,7 +101,18 @@ export const motion = Object.freeze({
   deliberate: 420,
   springDamping: 20,
   springStiffness: 190,
+  // Press feedback (see Touchable). A stiff, lightly damped spring: the
+  // control sinks and rebounds inside ~180ms, the iOS "firm tap" feel.
+  // `mass < 1` keeps it from feeling heavy; it never overshoots visibly.
+  pressSpring: Object.freeze({ damping: 26, stiffness: 340, mass: 0.6 }),
+  // How far a control scales down while held. Cards move less than chips so
+  // the shadow does not visibly detach. Opacity dip doubles as the Reduce
+  // Motion fallback (no scale, just this).
+  pressScale: Object.freeze({ control: 0.96, row: 0.97, card: 0.985 }),
+  pressOpacity: Object.freeze({ control: 0.92, row: 0.6, card: 0.96 }),
 });
+
+export type PressVariant = keyof typeof motion.pressScale;
 
 export const cardTokens = Object.freeze({
   gradientAngle: 135,

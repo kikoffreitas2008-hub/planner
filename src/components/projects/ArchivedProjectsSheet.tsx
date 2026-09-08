@@ -1,6 +1,7 @@
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { ColorDot } from "@/components/ui/ColorDot";
+import { Touchable } from "@/components/ui/Touchable";
 import { useArchivedProjects } from "@/data/projects";
 import { projects } from "@/data/repositories";
 import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
@@ -15,9 +16,9 @@ export function ArchivedProjectsSheet({ onClose }: { onClose: () => void }) {
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>Archived projects</Text>
-            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+            <Touchable onPress={onClose} accessibilityLabel="Close">
               <Text style={styles.close}>✕</Text>
-            </Pressable>
+            </Touchable>
           </View>
           <ScrollView contentContainerStyle={styles.list}>
             {archived.length === 0 ? (
@@ -29,13 +30,13 @@ export function ArchivedProjectsSheet({ onClose }: { onClose: () => void }) {
                   <Text style={styles.name} numberOfLines={1}>
                     {project.title}
                   </Text>
-                  <Pressable
+                  <Touchable
                     onPress={() => projects.restore(project.id)}
-                    accessibilityRole="button"
+                    haptic="success"
                     style={styles.restore}
                   >
                     <Text style={styles.restoreText}>Restore</Text>
-                  </Pressable>
+                  </Touchable>
                 </View>
               ))
             )}
