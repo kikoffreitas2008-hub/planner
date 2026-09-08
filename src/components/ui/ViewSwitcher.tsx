@@ -34,7 +34,9 @@ export function ViewSwitcher({ value, onChange }: ViewSwitcherProps) {
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen(true)}
       >
-        <Text style={styles.triggerText}>{calendarViewLabel(value)}</Text>
+        {/* Just the initial — "M" / "W" / "D" — so the screen title next to
+            it always fits in full. The menu rows still spell it out. */}
+        <Text style={styles.triggerText}>{calendarViewLabel(value).charAt(0)}</Text>
         <PlatformIcon sf="chevron.down" ion="chevron-down" size={13} color={colors.text} />
       </Touchable>
 
@@ -84,9 +86,11 @@ const styles = StyleSheet.create({
   trigger: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.xxs,
+    justifyContent: "center",
+    gap: 2,
     height: 44,
-    paddingHorizontal: spacing.sm,
+    minWidth: 44,
+    paddingHorizontal: spacing.xs,
     borderRadius: radius.pill,
     backgroundColor: colors.mutedSurface,
   },
