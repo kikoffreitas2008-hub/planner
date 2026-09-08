@@ -82,17 +82,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    // If a screen's controls are ever too wide to sit beside the full title,
-    // they wrap to a second line rather than squeezing the title.
-    flexWrap: "wrap",
-    rowGap: spacing.xs,
     paddingTop: spacing.md,
     paddingBottom: spacing.md,
   },
   headerText: {
-    // The title always renders in full — never shrinks, never truncates.
-    flexShrink: 0,
+    // Takes the space left of the controls; the (short) title keeps its full
+    // width and it's the subtitle that truncates if the row is ever tight,
+    // so the controls always stay on the title's line, right-aligned.
     flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
     marginRight: spacing.sm,
   },
   title: {
