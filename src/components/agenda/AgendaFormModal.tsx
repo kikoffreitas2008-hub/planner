@@ -219,7 +219,7 @@ export function AgendaFormModal({
 
             <View style={styles.switchRow}>
               <Text style={styles.fieldLabel}>All day</Text>
-              <Switch value={allDay} onValueChange={setAllDay} />
+              <Switch accessibilityLabel="All day" value={allDay} onValueChange={setAllDay} />
             </View>
 
             {!allDay ? (

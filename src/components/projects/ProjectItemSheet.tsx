@@ -166,7 +166,7 @@ export function ProjectItemSheet({ item, onClose }: ProjectItemSheetProps) {
 
             <View style={styles.switchRow}>
               <Text style={styles.fieldLabel}>Schedule</Text>
-              <Switch value={scheduled} onValueChange={setScheduled} />
+              <Switch accessibilityLabel="Schedule" value={scheduled} onValueChange={setScheduled} />
             </View>
 
             {scheduled ? (
@@ -183,7 +183,7 @@ export function ProjectItemSheet({ item, onClose }: ProjectItemSheetProps) {
                 </PickerField>
                 <View style={styles.switchRow}>
                   <Text style={styles.fieldLabel}>All day</Text>
-                  <Switch value={allDay} onValueChange={setAllDay} />
+                  <Switch accessibilityLabel="All day" value={allDay} onValueChange={setAllDay} />
                 </View>
                 {!allDay ? (
                   <PickerField label="Time" value={`${start} – ${end}`}>

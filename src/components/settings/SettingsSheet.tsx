@@ -59,6 +59,7 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
             <View style={styles.switchRow}>
               <Text style={styles.value}>Notifications</Text>
               <Switch
+                accessibilityLabel="Notifications"
                 value={userSettings?.notifications_enabled ?? false}
                 onValueChange={(next) => {
                   settingsRepo.update({ notifications_enabled: next });
@@ -76,6 +77,7 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
             <View style={styles.switchRow}>
               <Text style={styles.value}>Project progress visible by default</Text>
               <Switch
+                accessibilityLabel="Project progress visible by default"
                 value={userSettings?.project_progress_visible ?? true}
                 onValueChange={(next) => settingsRepo.update({ project_progress_visible: next })}
               />
@@ -83,6 +85,7 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
             <View style={styles.switchRow}>
               <Text style={styles.value}>Reduce motion</Text>
               <Switch
+                accessibilityLabel="Reduce motion"
                 value={userSettings?.reduce_motion ?? false}
                 onValueChange={(next) => settingsRepo.update({ reduce_motion: next })}
               />

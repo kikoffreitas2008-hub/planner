@@ -14,3 +14,6 @@ expo-env.d.ts
 # generated native folders (huge; produced by `expo prebuild`)
 /ios
 /android
+
+# Supabase CLI local state
+supabase/.temp/
