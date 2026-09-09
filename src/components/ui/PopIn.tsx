@@ -5,16 +5,14 @@ import Animated, { Keyframe } from "react-native-reanimated";
 import { useUserSettings } from "@/data/store";
 
 // A small scale + fade for menus, dropdowns and popover-style dialogs, so they
-// grow into place instead of blinking on. Exit is shorter than the entrance.
+// grow into place instead of blinking on. The exit is left to the host Modal's
+// `animationType="fade"`: running a reanimated exit on top of it made the menu
+// flash back to full opacity for a frame after the Modal had already faded it
+// out, then vanish.
 const pop = new Keyframe({
   0: { opacity: 0, transform: [{ scale: 0.92 }] },
   100: { opacity: 1, transform: [{ scale: 1 }] },
 }).duration(150);
-
-const unpop = new Keyframe({
-  0: { opacity: 1, transform: [{ scale: 1 }] },
-  100: { opacity: 0, transform: [{ scale: 0.96 }] },
-}).duration(110);
 
 export type PopInProps = {
   children: ReactNode;
@@ -26,7 +24,7 @@ export function PopIn({ children, style }: PopInProps) {
   const reduceMotion = useUserSettings()?.reduce_motion ?? false;
   if (reduceMotion) return <View style={style}>{children}</View>;
   return (
-    <Animated.View entering={pop} exiting={unpop} style={style}>
+    <Animated.View entering={pop} style={style}>
       {children}
     </Animated.View>
   );

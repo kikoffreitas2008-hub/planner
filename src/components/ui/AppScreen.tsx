@@ -47,19 +47,21 @@ export function AppScreen({
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.column}>
-        <View style={styles.header}>
+        <View style={[styles.header, subtitle ? styles.headerTight : null]}>
           <View style={styles.headerText}>
             <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
               {title}
             </Text>
-            {subtitle ? (
-              <Text style={styles.subtitle} numberOfLines={1}>
-                {subtitle}
-              </Text>
-            ) : null}
           </View>
           {headerRight ? <View style={styles.headerRight}>{headerRight}</View> : null}
         </View>
+        {subtitle ? (
+          // Its own full-width line below the controls, so a long date reads in
+          // full instead of truncating against the buttons on the title's row.
+          <Text style={styles.subtitle} numberOfLines={1}>
+            {subtitle}
+          </Text>
+        ) : null}
         {body}
       </View>
     </SafeAreaView>
@@ -85,10 +87,14 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.md,
   },
+  // When a subtitle follows, tighten the gap under the title/controls row so
+  // the subtitle sits just below the controls rather than a full block away.
+  headerTight: {
+    paddingBottom: spacing.xs,
+  },
   headerText: {
-    // Takes the space left of the controls; the (short) title keeps its full
-    // width and it's the subtitle that truncates if the row is ever tight,
-    // so the controls always stay on the title's line, right-aligned.
+    // Takes the space left of the controls; keeps the controls on the title's
+    // line, right-aligned, and lets a long title (not the subtitle) truncate.
     flexGrow: 1,
     flexShrink: 1,
     minWidth: 0,
@@ -101,7 +107,7 @@ const styles = StyleSheet.create({
   subtitle: {
     ...typography.body,
     color: colors.textSecondary,
-    marginTop: spacing.xxs,
+    paddingBottom: spacing.md,
   },
   headerRight: {
     flexDirection: "row",
