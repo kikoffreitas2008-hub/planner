@@ -47,7 +47,7 @@ export function AppScreen({
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.column}>
-        <View style={[styles.header, subtitle ? styles.headerTight : null]}>
+        <View style={styles.header}>
           <View style={styles.headerText}>
             <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
               {title}
@@ -86,11 +86,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingTop: spacing.md,
     paddingBottom: spacing.md,
-  },
-  // When a subtitle follows, tighten the gap under the title/controls row so
-  // the subtitle sits just below the controls rather than a full block away.
-  headerTight: {
-    paddingBottom: spacing.xs,
   },
   headerText: {
     // Takes the space left of the controls; keeps the controls on the title's
