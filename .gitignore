@@ -17,3 +17,15 @@ expo-env.d.ts
 
 # Supabase CLI local state
 supabase/.temp/
+
+# Cloudflare Wrangler local state
+.wrangler/
+
+# OS junk
+.DS_Store
+._*
+Thumbs.db
+desktop.ini
+
+# Ficheiros pessoais entregues pelo Claude (CV, cartas) — não pertencem ao repositório
+Claude outputs/

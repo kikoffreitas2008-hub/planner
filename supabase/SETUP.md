@@ -1,13 +1,13 @@
 # Turning on sync — step by step
 
 The app runs fully local until this is done. Everything here is free
-(Supabase free tier + Brevo free SMTP). Project: `pillcmhgwgzvmhlcvmwh`.
+(Supabase free tier + Brevo free SMTP). Project: `<your-project-ref>`.
 
 ---
 
 ## 1 · Schema + RLS  (2 min, dashboard only)
 
-1. https://supabase.com/dashboard → project **pillcmhgwgzvmhlcvmwh** → **SQL Editor** → **New query**.
+1. https://supabase.com/dashboard → project **<your-project-ref>** → **SQL Editor** → **New query**.
 2. Open `supabase/schema.sql` in this repo, copy the whole file, paste, **Run**.
 3. It drops the old PowerSync tables and recreates 9 tables
    (`user_settings`, `projects`, `project_items`, `calendar_items`,
@@ -49,7 +49,7 @@ In a terminal (use `! <command>` in this session so the output lands here):
 ```
 npm i -g supabase
 supabase login --token <token>        # from dashboard → Account → Access Tokens
-supabase link --project-ref pillcmhgwgzvmhlcvmwh
+supabase link --project-ref <your-project-ref>
 supabase functions deploy delete-account
 ```
 
@@ -66,7 +66,7 @@ correct; 404 = not deployed):
 
 ```
 curl -s -o /dev/null -w "%{http_code}\n" -X POST \
-  https://pillcmhgwgzvmhlcvmwh.supabase.co/functions/v1/delete-account \
+  https://<your-project-ref>.supabase.co/functions/v1/delete-account \
   -H "apikey: $EXPO_PUBLIC_SUPABASE_ANON_KEY"
 ```
 
