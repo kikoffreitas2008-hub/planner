@@ -18,7 +18,7 @@ class MemoryStorage {
 (globalThis as { window?: unknown }).window = { localStorage: new MemoryStorage() };
 
 const { getDatabase, resetDatabaseForTests } = await import("../data/store.ts");
-const { calendarItems } = await import("../data/repositories.ts");
+const { calendarItems, projects } = await import("../data/repositories.ts");
 const { createFakeBackend } = await import("./fakeBackend.ts");
 const { startSync, stopSync, syncNow } = await import("./engine.ts");
 const outbox = await import("./outbox.ts");
@@ -147,6 +147,48 @@ test("a newer remote row wins even when Postgres formats the timestamp different
   await syncNow();
 
   assert.equal(getDatabase().calendar_items[item.id].title, "Newer wins");
+});
+
+test("a row created before startSync (the auth-session race) still reaches the backend", async () => {
+  const { backend, server } = createFakeBackend("u1");
+
+  // Reproduces production: the app is usable before `supabase.auth.getSession()`
+  // resolves, so a row can be created — and written straight to the local
+  // database — before `startSync` ever wires up the mutation handler that
+  // feeds the outbox. It was never in `pending()`, so nothing about the
+  // outbox looked wrong; the row just silently never left the device.
+  const project = projects.create({
+    title: "Created before sign-in resolved",
+    mode: "simple",
+    color: "blue",
+    progress_mode: "items",
+  });
+
+  await startSync(backend);
+
+  assert.equal(server.get("projects", project.id)?.title, "Created before sign-in resolved");
+});
+
+test("a pre-start row never overwrites a newer version already on the server", async () => {
+  const { backend, server } = createFakeBackend("u1");
+
+  const project = projects.create({
+    title: "Old local title",
+    mode: "simple",
+    color: "blue",
+    progress_mode: "items",
+  });
+  // Another device edited the same project after this device last wrote it.
+  server.put("projects", {
+    ...(getDatabase().projects[project.id] as unknown as SyncRow),
+    title: "Newer title from the iPad",
+    updated_at: new Date(Date.now() + 60_000).toISOString(),
+  });
+
+  await startSync(backend);
+
+  assert.equal(server.get("projects", project.id)?.title, "Newer title from the iPad");
+  assert.equal(getDatabase().projects[project.id].title, "Newer title from the iPad");
 });
 
 test("one table failing to pull does not block the others", async () => {

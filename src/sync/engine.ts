@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 
 import { getDatabase, setMutationHandler, setUserSettings, upsertRow, type MutationEvent } from "@/data/store";
 import { getCursor, lastSyncAt, setCursor } from "@/sync/cursors";
-import { shouldApplyRemote } from "@/sync/merge";
+import { compareVersions, shouldApplyRemote } from "@/sync/merge";
 import { ack, enqueue, pending, recordFailure, size } from "@/sync/outbox";
 import { SYNC_TABLES, type SyncBackend, type SyncRow, type SyncTableName } from "@/sync/types";
 
@@ -58,6 +58,12 @@ let unsubscribeRealtime: (() => void) | null = null;
 let pushTimer: ReturnType<typeof setTimeout> | null = null;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let running = false;
+
+/**
+ * Tables whose local rows still need a one-time look for writes the outbox never
+ * saw, mapped to the cursor as it was when sync started. See `backfillTable`.
+ */
+const backfillSince = new Map<SyncTableName, string | null>();
 
 // One cycle at a time; anything asked for meanwhile is folded into it.
 let cycle: Promise<void> | null = null;
@@ -215,6 +221,7 @@ async function pullOnce(): Promise<void> {
         }
       }
       if (result.cursor) setCursor(table, result.cursor);
+      backfillTable(table);
     } catch (error) {
       lastError = error;
     }
@@ -223,6 +230,43 @@ async function pullOnce(): Promise<void> {
     setStatus({ error: describe(lastError), online: isOnline() });
   } else {
     setStatus({ error: null, online: true });
+  }
+}
+
+/**
+ * Queue local rows that changed while no mutation handler was attached — before
+ * `getSession()` resolved, during the first sign-in's re-keying, or while signed
+ * out. Those writes never went through `onLocalMutation`, so the outbox does not
+ * know about them and they would otherwise stay on this device for good.
+ *
+ * Two guards keep this from clobbering newer data, since the backend upsert is
+ * blind: it runs only after this table's pull succeeded (a newer remote version
+ * has already replaced the local row), and it only takes rows newer than the
+ * cursor from before that pull — a row that came from the server is never newer
+ * than the cursor. Re-queuing a row the server already has is a harmless upsert.
+ */
+function backfillTable(table: SyncTableName): void {
+  if (!backfillSince.has(table)) return;
+  const since = backfillSince.get(table) ?? null;
+  backfillSince.delete(table);
+
+  const db = getDatabase();
+  const rows: SyncRow[] =
+    table === "user_settings"
+      ? db.user_settings
+        ? [db.user_settings as unknown as SyncRow]
+        : []
+      : Object.values(db[table] as unknown as Record<string, SyncRow>);
+
+  let queued = 0;
+  for (const row of rows) {
+    if (since && compareVersions(row.updated_at, since) <= 0) continue;
+    enqueue(table, row);
+    queued += 1;
+  }
+  if (queued > 0) {
+    queuedPush = true;
+    setStatus({});
   }
 }
 
@@ -242,6 +286,9 @@ export async function startSync(nextBackend: SyncBackend): Promise<void> {
   setMutationHandler(onLocalMutation);
   addForegroundListeners();
 
+  backfillSince.clear();
+  for (const table of SYNC_TABLES) backfillSince.set(table, getCursor(table));
+
   pollTimer = setInterval(() => {
     if (running && isVisible()) requestPull();
   }, POLL_MS);
@@ -260,6 +307,7 @@ export function stopSync(): void {
   backend = null;
   queuedPull = false;
   queuedPush = false;
+  backfillSince.clear();
   setMutationHandler(null);
   unsubscribeRealtime?.();
   unsubscribeRealtime = null;
