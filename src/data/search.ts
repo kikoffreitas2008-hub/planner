@@ -58,7 +58,8 @@ function buildDocs(): SearchDoc[] {
   }
 
   for (const item of activeEntries(db.remember_items)) {
-    docs.push({ id: `remember:${item.id}`, kind: "remember", title: item.title, text: "", date: item.date });
+    // No date: a reminder is not tied to a day, so the result shows none.
+    docs.push({ id: `remember:${item.id}`, kind: "remember", title: item.title, text: "" });
   }
 
   return docs;

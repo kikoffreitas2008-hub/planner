@@ -113,7 +113,7 @@ export default function TodayScreen() {
 
       <Divider />
 
-      <RememberSection date={viewDate} />
+      <RememberSection />
 
       {form ? (
         <AgendaFormModal

@@ -174,7 +174,9 @@ A reusable checklist inside a white three-dimensional card.
 Things to keep in mind for the day.
 
 - Thin cards — noticeably thinner than to-do and routine cards.
-- One line of text, tied to a date.
+- One line of text. **Not tied to a date**: a reminder stays on Today, every day, until
+  the owner deletes it.
+- Long-press a card and drag it up or down to reorder; long-press does nothing else.
 - Tap to edit; swipe left to delete with Undo.
 - Can take a palette colour. No duration, no progress, no completion.
 

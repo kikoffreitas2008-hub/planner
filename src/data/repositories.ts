@@ -222,6 +222,15 @@ export const remember = {
   restore(id: string): void {
     touch("remember_items", id, { deleted_at: null });
   },
+
+  applyOrder(orderedIds: readonly string[]): void {
+    let previous: string | null = null;
+    for (const id of orderedIds) {
+      const key = generateKeyBetween(previous, null);
+      touch("remember_items", id, { manual_sort_key: key });
+      previous = key;
+    }
+  },
 };
 
 // --- projects ------------------------------------------------------------

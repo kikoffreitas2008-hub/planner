@@ -131,3 +131,12 @@ test("routine.applyOrder rewrites items into the given order", () => {
   const key = (id: string) => getDatabase().routine_items[id].manual_sort_key;
   assert.ok(key(c.id) < key(a.id) && key(a.id) < key(b.id));
 });
+
+test("remember.applyOrder rewrites items into the given order", () => {
+  const a = remember.create("2026-09-04", "a");
+  const b = remember.create("2026-09-04", "b");
+  const c = remember.create("2026-09-04", "c");
+  remember.applyOrder([c.id, a.id, b.id]);
+  const key = (id: string) => getDatabase().remember_items[id].manual_sort_key;
+  assert.ok(key(c.id) < key(a.id) && key(a.id) < key(b.id));
+});

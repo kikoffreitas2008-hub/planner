@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { SwipeableRow } from "@/components/agenda/SwipeableRow";
+import { DraggableColumn } from "@/components/projects/DraggableColumn";
 import { ColorDot } from "@/components/ui/ColorDot";
 import { ColorPickerSheet } from "@/components/ui/ColorPickerSheet";
 import { GlossyCard } from "@/components/ui/GlossyCard";
@@ -9,22 +10,23 @@ import { Touchable } from "@/components/ui/Touchable";
 import { remember } from "@/data/repositories";
 import { useTable } from "@/data/store";
 import { offerUndo } from "@/data/undoBar";
-import type { ISODate } from "@/domain/date";
-import { colors, palette, spacing, typography, type PaletteKey } from "@/theme/tokens";
+import { visibleRememberItems } from "@/domain/remember";
+import {
+  colors,
+  layoutTokens,
+  palette,
+  spacing,
+  typography,
+  type PaletteKey,
+} from "@/theme/tokens";
 
-export function RememberSection({ date }: { date: ISODate }) {
+/** Standing reminders: shown on every day until deleted, not tied to a date. */
+export function RememberSection() {
   const rememberItems = useTable("remember_items");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [colorForId, setColorForId] = useState<string | null>(null);
-  const [menuForId, setMenuForId] = useState<string | null>(null);
 
-  const items = useMemo(
-    () =>
-      Object.values(rememberItems)
-        .filter((item) => item.date === date && !item.deleted_at)
-        .sort((a, b) => (a.manual_sort_key < b.manual_sort_key ? -1 : 1)),
-    [rememberItems, date],
-  );
+  const items = useMemo(() => visibleRememberItems(rememberItems), [rememberItems]);
 
   // A freshly created blank card opens straight into edit mode.
   const blankId = items.find((item) => !item.title.trim())?.id ?? null;
@@ -49,68 +51,68 @@ export function RememberSection({ date }: { date: ISODate }) {
       {items.length === 0 ? (
         <Text style={styles.empty}>Nothing to remember for this day.</Text>
       ) : (
-        items.map((item) => (
-          <SwipeableRow
-            key={item.id}
-            onSwipeRight={() => setEditingId(item.id)}
-            onSwipeLeft={() => removeItem(item.id)}
-            rightLabel="Edit"
-          >
-            <GlossyCard color={item.color} size="remember">
-              <View style={styles.row}>
-                {activeEditId === item.id ? (
-                  <TextInput
-                    defaultValue={item.title}
-                    onSubmitEditing={(event) => commit(item.id, event.nativeEvent.text)}
-                    onEndEditing={(event) => commit(item.id, event.nativeEvent.text)}
-                    returnKeyType="done"
-                    placeholder="One line to remember"
-                    placeholderTextColor={palette[item.color].ink}
-                    style={[styles.input, { color: palette[item.color].ink }]}
-                    autoFocus
-                  />
-                ) : (
-                  <Touchable
-                    variant="row"
-                    style={styles.textWrap}
-                    onPress={() => setEditingId(item.id)}
-                    onLongPress={() => setMenuForId((id) => (id === item.id ? null : item.id))}
-                    accessibilityLabel={`Remember: ${item.title || "empty"}`}
-                    accessibilityHint="Double tap to edit, or use the actions below to delete"
-                  >
-                    <Text
-                      style={[styles.text, { color: palette[item.color].ink }]}
-                      numberOfLines={1}
-                    >
-                      {item.title || "…"}
-                    </Text>
-                  </Touchable>
-                )}
-                <ColorDot
-                  color={item.color}
-                  onPress={() => setColorForId(item.id)}
-                  accessibilityLabel={`Change colour (currently ${item.color})`}
-                />
+        // Rows are stacked absolutely by the column, so the gap between cards
+        // lives in each row; the negative margin cancels the last row's copy.
+        <View style={styles.list}>
+          <DraggableColumn
+            data={items}
+            enabled={!activeEditId}
+            dragMode="longPress"
+            estimatedRowHeight={layoutTokens.rememberHeight + spacing.sm}
+            onReorder={(orderedIds) => remember.applyOrder(orderedIds)}
+            renderItem={(item) => (
+              <View style={styles.rowGap}>
+                <SwipeableRow
+                  onSwipeRight={() => setEditingId(item.id)}
+                  onSwipeLeft={() => removeItem(item.id)}
+                  rightLabel="Edit"
+                >
+                  <GlossyCard color={item.color} size="remember">
+                    <View style={styles.row}>
+                      {activeEditId === item.id ? (
+                        <TextInput
+                          defaultValue={item.title}
+                          onSubmitEditing={(event) => commit(item.id, event.nativeEvent.text)}
+                          onEndEditing={(event) => commit(item.id, event.nativeEvent.text)}
+                          returnKeyType="done"
+                          placeholder="One line to remember"
+                          placeholderTextColor={palette[item.color].ink}
+                          style={[styles.input, { color: palette[item.color].ink }]}
+                          autoFocus
+                        />
+                      ) : (
+                        <Touchable
+                          variant="row"
+                          style={styles.textWrap}
+                          onPress={() => setEditingId(item.id)}
+                          // Holding a card is only for reordering. Having a
+                          // long-press handler makes Pressable skip `onPress`
+                          // on release, so lifting a held card does not open
+                          // the editor.
+                          onLongPress={() => {}}
+                          accessibilityLabel={`Remember: ${item.title || "empty"}`}
+                          accessibilityHint="Double tap to edit. Swipe left to delete."
+                        >
+                          <Text
+                            style={[styles.text, { color: palette[item.color].ink }]}
+                            numberOfLines={1}
+                          >
+                            {item.title || "…"}
+                          </Text>
+                        </Touchable>
+                      )}
+                      <ColorDot
+                        color={item.color}
+                        onPress={() => setColorForId(item.id)}
+                        accessibilityLabel={`Change colour (currently ${item.color})`}
+                      />
+                    </View>
+                  </GlossyCard>
+                </SwipeableRow>
               </View>
-              {menuForId === item.id ? (
-                <View style={styles.menu}>
-                  <Touchable
-                    variant="row"
-                    onPress={() => {
-                      setMenuForId(null);
-                      removeItem(item.id);
-                    }}
-                    style={styles.menuAction}
-                  >
-                    <Text style={[styles.menuActionText, { color: palette[item.color].ink }]}>
-                      Delete
-                    </Text>
-                  </Touchable>
-                </View>
-              ) : null}
-            </GlossyCard>
-          </SwipeableRow>
-        ))
+            )}
+          />
+        </View>
       )}
 
       {colorForId ? (
@@ -154,18 +156,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 0,
   },
-  menu: {
-    flexDirection: "row",
-    marginTop: spacing.xs,
-    paddingTop: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0, 0, 0, 0.08)",
+  list: {
+    marginBottom: -spacing.sm,
   },
-  menuAction: {
-    paddingVertical: spacing.xxs,
-    paddingHorizontal: spacing.xs,
-  },
-  menuActionText: {
-    ...typography.button,
+  rowGap: {
+    paddingBottom: spacing.sm,
   },
 });

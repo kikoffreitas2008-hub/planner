@@ -75,7 +75,9 @@ The Morning Routine. Lists have `title`, `archived_at`, `manual_sort_key`. Items
 `completed_at` persists until the user taps Reset. Nothing clears it at midnight.
 
 ### `remember_items`
-`date`, `title`, `color`, `manual_sort_key`. No duration, no completion.
+`date`, `title`, `color`, `manual_sort_key`. No duration, no completion. `date` is only the
+day of creation (kept so older builds still read the row); it does not decide where the
+reminder shows — every non-deleted reminder is on Today until it is deleted.
 
 ### `recurrence_exceptions`
 `origin_id`, `occurrence_date`, `exception_type` (`cancelled` | `replaced`),

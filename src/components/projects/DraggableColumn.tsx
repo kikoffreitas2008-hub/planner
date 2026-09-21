@@ -20,6 +20,7 @@ import { colors, spacing } from "@/theme/tokens";
 
 const SPRING = { damping: 22, stiffness: 200 } as const;
 const HANDLE_WIDTH = 40;
+const LONG_PRESS_MS = 250;
 
 type Indexed = Record<string, number>;
 type Heights = Record<string, number>;
@@ -50,14 +51,20 @@ export type DraggableColumnProps<T extends { id: string }> = {
   renderItem: (item: T) => ReactNode;
   onReorder: (orderedIds: string[]) => void;
   enabled?: boolean;
+  /**
+   * `handle` (default): a grip on the left, press and drag it.
+   * `longPress`: no grip — hold anywhere on the row, then drag it up or down.
+   */
+  dragMode?: "handle" | "longPress";
   /** Used for layout before rows have measured themselves. */
   estimatedRowHeight?: number;
 };
 
 /**
  * A vertical drag-to-reorder list that measures its own rows, so it works with
- * fixed and variable heights alike. Each row carries a grip handle (three
- * lines) on the left; press and drag it — no long-press. On drop it calls
+ * fixed and variable heights alike. By default each row carries a grip handle
+ * (three lines) on the left; press and drag it — no long-press. With
+ * `dragMode="longPress"` the whole row is the handle instead. On drop it calls
  * `onReorder` with the new id order (blueprint/01 §4.4).
  */
 export function DraggableColumn<T extends { id: string }>({
@@ -65,6 +72,7 @@ export function DraggableColumn<T extends { id: string }>({
   renderItem,
   onReorder,
   enabled = true,
+  dragMode = "handle",
   estimatedRowHeight = 64,
 }: DraggableColumnProps<T>) {
   const idsKey = data.map((item) => item.id).join("|");
@@ -106,6 +114,7 @@ export function DraggableColumn<T extends { id: string }>({
           id={item.id}
           ids={ids}
           enabled={enabled}
+          dragMode={dragMode}
           estimate={estimatedRowHeight}
           reduceMotion={reduceMotion}
           positions={positions}
@@ -127,6 +136,7 @@ type RowProps = {
   id: string;
   ids: readonly string[];
   enabled: boolean;
+  dragMode: "handle" | "longPress";
   estimate: number;
   reduceMotion: boolean;
   positions: SharedValue<Indexed>;
@@ -143,6 +153,7 @@ function Row({
   id,
   ids,
   enabled,
+  dragMode,
   estimate,
   reduceMotion,
   positions,
@@ -154,6 +165,8 @@ function Row({
   onCommit,
   children,
 }: RowProps) {
+  const wholeRow = dragMode === "longPress";
+
   function topOf(targetId: string): number {
     "worklet";
     const myPos = positions.value[targetId];
@@ -165,9 +178,12 @@ function Row({
   }
 
   const gesture = useMemo(
-    () =>
-      Gesture.Pan()
-        .enabled(enabled)
+    () => {
+      const pan = Gesture.Pan().enabled(enabled);
+      // Moving before the hold completes fails the pan, so a plain swipe or
+      // scroll never turns into a drag.
+      if (wholeRow) pan.activateAfterLongPress(LONG_PRESS_MS);
+      return pan
         .activeOffsetY([-4, 4])
         .failOffsetX([-16, 16])
         .onStart(() => {
@@ -199,9 +215,10 @@ function Row({
         })
         .onFinalize(() => {
           if (activeId.value === id) activeId.value = null;
-        }),
+        });
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [id, ids, enabled, estimate, onCommit],
+    [id, ids, enabled, wholeRow, estimate, onCommit],
   );
 
   const rowStyle = useAnimatedStyle(() => {
@@ -235,7 +252,7 @@ function Row({
   return (
     <Animated.View style={rowStyle} onLayout={handleLayout}>
       <View style={styles.inner}>
-        {enabled ? (
+        {enabled && !wholeRow ? (
           <GestureDetector gesture={gesture}>
             <View
               style={styles.handle}
@@ -259,7 +276,13 @@ function Row({
             </View>
           </GestureDetector>
         ) : null}
-        <View style={styles.content}>{children}</View>
+        {wholeRow ? (
+          <GestureDetector gesture={gesture}>
+            <View style={styles.content}>{children}</View>
+          </GestureDetector>
+        ) : (
+          <View style={styles.content}>{children}</View>
+        )}
       </View>
     </Animated.View>
   );

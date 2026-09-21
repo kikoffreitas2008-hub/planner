@@ -106,6 +106,7 @@ export interface RoutineItem extends SyncEntity {
 }
 
 export interface RememberItem extends SyncEntity {
+  /** The day it was created. Reminders are not tied to a day — see domain/remember.ts. */
   date: ISODate;
   title: string;
   color: PaletteColor;
