@@ -5,10 +5,14 @@ import { GlossyCard } from "@/components/ui/GlossyCard";
 import { Touchable } from "@/components/ui/Touchable";
 import { projectItems } from "@/data/repositories";
 import type { Project, ProjectItem } from "@/domain/entities";
+import { fitTitleSize, MIN_TITLE_SIZE } from "@/domain/fitText";
 import { colors, layoutTokens, palette, radius, spacing, typography } from "@/theme/tokens";
 
 const GAP = spacing.md;
 const TARGET_CARD = 150;
+const TITLE_LINES = 4;
+/** Centred text may run this far into the card's padding on each side. */
+const TITLE_BLEED = spacing.xs;
 
 export type StructuredTaskGridProps = {
   project: Project;
@@ -31,6 +35,7 @@ export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTas
   const columns = Math.max(2, Math.floor((containerWidth + GAP) / (TARGET_CARD + GAP)));
   const size = (containerWidth - GAP * (columns - 1)) / columns;
   const ink = palette[project.color].ink;
+  const lineWidth = size - spacing.lg * 2 + TITLE_BLEED * 2;
 
   function addTask() {
     const title = draft.trim();
@@ -47,6 +52,15 @@ export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTas
         <View style={styles.grid}>
           {tasks.map((task) => {
             const done = Boolean(task.completed_at);
+            // Size the name to the card so no word is broken across lines.
+            const fitted = fitTitleSize({
+              title: task.title,
+              width: lineWidth,
+              maxSize: typography.heading.fontSize,
+              minSize: MIN_TITLE_SIZE,
+              maxLines: TITLE_LINES,
+              lineHeightRatio: typography.heading.lineHeight / typography.heading.fontSize,
+            });
             return (
               <Touchable
                 key={task.id}
@@ -59,9 +73,16 @@ export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTas
                   <View style={styles.taskBody}>
                     {/* The card carries the name alone; the subtask count only
                         matters once the task is open (owner's call). */}
-                    <Text style={[styles.taskTitle, { color: ink }]} numberOfLines={4}>
-                      {task.title}
-                    </Text>
+                    {/* Width on a View: a numberOfLines Text on web is capped at
+                        its parent's width, which would cancel the bleed. */}
+                    <View style={{ width: lineWidth }}>
+                      <Text
+                        style={[styles.taskTitle, fitted, { color: ink }]}
+                        numberOfLines={TITLE_LINES}
+                      >
+                        {task.title}
+                      </Text>
+                    </View>
                   </View>
                 </GlossyCard>
               </Touchable>
