@@ -9,6 +9,7 @@ export function createFakeBackend(userId: string) {
   let online = true;
   let listener: (() => void) | null = null;
   let onPush: (() => void) | null = null;
+  const brokenPulls = new Set<SyncTableName>();
 
   function table(name: SyncTableName): Map<string, SyncRow> {
     let map = tables.get(name);
@@ -30,6 +31,7 @@ export function createFakeBackend(userId: string) {
     },
     async pullRows(name, since) {
       if (!online) throw new Error("offline");
+      if (brokenPulls.has(name)) throw new Error(`simulated pull failure: ${name}`);
       const rows = [...table(name).values()]
         // Inclusive on the cursor, like the Supabase backend — see the note there.
         .filter((row) => !since || row.updated_at >= since)
@@ -63,6 +65,10 @@ export function createFakeBackend(userId: string) {
       /** Act as the other device mid-push — the window a pull used to be lost in. */
       onPush(handler: (() => void) | null) {
         onPush = handler;
+      },
+      /** Make pulling one table always throw, to test that others are unaffected. */
+      breakPull(name: SyncTableName) {
+        brokenPulls.add(name);
       },
     },
   };

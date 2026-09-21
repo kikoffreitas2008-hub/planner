@@ -195,10 +195,15 @@ async function pushOnce(): Promise<void> {
 async function pullOnce(): Promise<void> {
   if (!backend || !running || !isOnline()) return;
   const activeBackend = backend;
-  try {
-    for (const table of SYNC_TABLES) {
+  // One table's failure must not stop the rest — a schema hiccup or a bad row
+  // on "recurrence_exceptions" used to abort the whole cycle, silently taking
+  // every table that comes after it in SYNC_TABLES (including calendar_items
+  // and projects) down with it. Isolate each table so the others still land.
+  let lastError: unknown = null;
+  for (const table of SYNC_TABLES) {
+    if (!running || backend !== activeBackend) return;
+    try {
       const result = await activeBackend.pullRows(table, getCursor(table));
-      // The engine may have been stopped or re-pointed while awaiting.
       if (!running || backend !== activeBackend) return;
       for (const remote of result.rows) {
         const local = snapshot(table, remote.id);
@@ -210,10 +215,14 @@ async function pullOnce(): Promise<void> {
         }
       }
       if (result.cursor) setCursor(table, result.cursor);
+    } catch (error) {
+      lastError = error;
     }
+  }
+  if (lastError) {
+    setStatus({ error: describe(lastError), online: isOnline() });
+  } else {
     setStatus({ error: null, online: true });
-  } catch (error) {
-    setStatus({ error: describe(error), online: isOnline() });
   }
 }
 

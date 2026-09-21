@@ -10,15 +10,23 @@ import { UndoBar } from "@/components/ui/UndoBar";
 import "@/data/auth"; // initialises the session check + sync engine when configured
 import { refreshNotifications, scheduleNotificationsRefresh } from "@/data/notifications";
 import { addMutationListener, flush } from "@/data/store";
+import { syncNow } from "@/sync/engine";
 import { colors } from "@/theme/tokens";
 
 const NOTIFIABLE_TABLES = new Set(["calendar_items", "project_items", "recurrence_exceptions"]);
 
 export default function RootLayout() {
   useEffect(() => {
-    // Persist immediately whenever the app stops being active.
+    // Persist locally, and push anything outstanding, the moment the app
+    // stops being active — not just on the next foreground. A change made
+    // right before backgrounding is normally caught by the 0ms push timer,
+    // but the OS can suspend JS execution before that timer's callback runs;
+    // this closes that window instead of leaving it to the next reconnect.
     const subscription = AppState.addEventListener("change", (state) => {
-      if (state !== "active") flush();
+      if (state !== "active") {
+        flush();
+        void syncNow();
+      }
     });
     return () => subscription.remove();
   }, []);

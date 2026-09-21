@@ -149,6 +149,36 @@ test("a newer remote row wins even when Postgres formats the timestamp different
   assert.equal(getDatabase().calendar_items[item.id].title, "Newer wins");
 });
 
+test("one table failing to pull does not block the others", async () => {
+  const { backend, server } = createFakeBackend("u1");
+  // "user_settings" pulls first in SYNC_TABLES — breaking it used to abort
+  // the whole cycle and take every table after it (projects, calendar_items,
+  // ...) down too.
+  server.breakPull("user_settings");
+  await startSync(backend);
+
+  server.put(
+    "projects",
+    {
+      user_id: "u1",
+      deleted_at: null,
+      updated_at: "2026-09-04T10:00:00.000Z",
+      created_at: "2026-09-04T10:00:00.000Z",
+      id: "proj-from-b",
+      title: "From device B",
+      mode: "simple",
+      color: "blue",
+      progress_mode: "items",
+      order_mode: "importance_default",
+      archived_at: null,
+      manual_sort_key: "a0",
+    },
+  );
+  await syncNow();
+
+  assert.equal(getDatabase().projects["proj-from-b"]?.title, "From device B");
+});
+
 test("a tombstone from another device beats a same-time local edit", async () => {
   const { backend, server } = createFakeBackend("u1");
   await startSync(backend);
