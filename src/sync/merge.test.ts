@@ -35,6 +35,17 @@ test("an edit made after a restore (newer, active) beats an older delete", () =>
   assert.equal(pickWinner(restored, oldDelete), restored);
 });
 
+test("timestamps are compared as instants, not as strings", () => {
+  // What Postgres returns for a `timestamptz` vs what the client writes.
+  const remote: Versioned = { updated_at: "2026-09-04T10:00:00.123456+00:00", deleted_at: null };
+  const sameInstant: Versioned = { updated_at: "2026-09-04T10:00:00.123Z", deleted_at: null };
+  const older: Versioned = { updated_at: "2026-09-04T09:59:59.999Z", deleted_at: null };
+
+  // As raw strings "…+00:00" sorts before "…Z", which used to make the remote lose.
+  assert.equal(shouldApplyRemote(older, remote), true);
+  assert.equal(shouldApplyRemote(sameInstant, remote), false);
+});
+
 test("shouldApplyRemote is false when the local row already wins", () => {
   assert.equal(shouldApplyRemote(NEWER, OLDER), false);
   assert.equal(shouldApplyRemote(A, NEWER), true);

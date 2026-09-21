@@ -8,6 +8,7 @@ export function createFakeBackend(userId: string) {
   const tables = new Map<SyncTableName, Map<string, SyncRow>>();
   let online = true;
   let listener: (() => void) | null = null;
+  let onPush: (() => void) | null = null;
 
   function table(name: SyncTableName): Map<string, SyncRow> {
     let map = tables.get(name);
@@ -24,12 +25,14 @@ export function createFakeBackend(userId: string) {
       if (!online) throw new Error("offline");
       const map = table(name);
       for (const row of rows) map.set(row.id, { ...row });
+      onPush?.();
       listener?.();
     },
     async pullRows(name, since) {
       if (!online) throw new Error("offline");
       const rows = [...table(name).values()]
-        .filter((row) => !since || row.updated_at > since)
+        // Inclusive on the cursor, like the Supabase backend — see the note there.
+        .filter((row) => !since || row.updated_at >= since)
         .sort((a, b) => a.updated_at.localeCompare(b.updated_at));
       const cursor = rows.length ? rows[rows.length - 1].updated_at : (since ?? "");
       return { rows: rows.map((row) => ({ ...row })), cursor };
@@ -56,6 +59,10 @@ export function createFakeBackend(userId: string) {
       },
       setOnline(value: boolean) {
         online = value;
+      },
+      /** Act as the other device mid-push — the window a pull used to be lost in. */
+      onPush(handler: (() => void) | null) {
+        onPush = handler;
       },
     },
   };

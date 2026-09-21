@@ -108,6 +108,47 @@ test("last-write-wins: a newer remote row replaces the local one", async () => {
   assert.equal(getDatabase().calendar_items[item.id].title, "Newer wins");
 });
 
+test("a remote change landing during a push is not dropped", async () => {
+  const { backend, server } = createFakeBackend("u1");
+  await startSync(backend);
+
+  // The other device writes while this one is mid-push, then the realtime
+  // listener fires. The engine used to queue that pull and then throw it away.
+  let injected = false;
+  server.onPush(() => {
+    if (injected) return;
+    injected = true;
+    server.put(
+      "calendar_items",
+      remoteRow({ id: "late", updated_at: "2026-09-04T10:00:00.000Z", title: "Landed mid-push" }),
+    );
+  });
+
+  calendarItems.create({ item_type: "task", title: "Local", date: "2026-09-04" });
+  await syncNow();
+
+  assert.equal(getDatabase().calendar_items["late"]?.title, "Landed mid-push");
+});
+
+test("a newer remote row wins even when Postgres formats the timestamp differently", async () => {
+  const { backend, server } = createFakeBackend("u1");
+  await startSync(backend);
+
+  const item = calendarItems.create({ item_type: "task", title: "Original", date: "2026-09-04" });
+  await syncNow();
+  const local = getDatabase().calendar_items[item.id].updated_at;
+  // Postgres returns `timestamptz` as `+00:00` with microseconds, which sorts
+  // *before* the local `...Z` string even when it is a second newer.
+  const newer = new Date(Date.parse(local) + 1000)
+    .toISOString()
+    .replace("Z", "456+00:00");
+
+  server.put("calendar_items", remoteRow({ id: item.id, updated_at: newer, title: "Newer wins" }));
+  await syncNow();
+
+  assert.equal(getDatabase().calendar_items[item.id].title, "Newer wins");
+});
+
 test("a tombstone from another device beats a same-time local edit", async () => {
   const { backend, server } = createFakeBackend("u1");
   await startSync(backend);

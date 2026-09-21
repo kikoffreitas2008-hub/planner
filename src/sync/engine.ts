@@ -44,15 +44,37 @@ export function useSyncStatus(): SyncStatus {
 
 // --- engine state ---------------------------------------------------------
 
+/**
+ * How often to pull while the app is on screen. Realtime is the fast path, but
+ * an installed PWA can sit in the background for days: iOS suspends the page,
+ * the websocket dies, and nothing wakes the engine again. Without this poll
+ * (and the foreground listeners below) a device that is never reloaded simply
+ * stops receiving changes made on another device.
+ */
+const POLL_MS = 60_000;
+
 let backend: SyncBackend | null = null;
 let unsubscribeRealtime: (() => void) | null = null;
 let pushTimer: ReturnType<typeof setTimeout> | null = null;
+let pollTimer: ReturnType<typeof setInterval> | null = null;
 let running = false;
-let pullQueued = false;
+
+// One cycle at a time; anything asked for meanwhile is folded into it.
+let cycle: Promise<void> | null = null;
+let queuedPull = false;
+let queuedPush = false;
 
 function isOnline(): boolean {
   try {
     return typeof navigator === "undefined" ? true : navigator.onLine !== false;
+  } catch {
+    return true;
+  }
+}
+
+function isVisible(): boolean {
+  try {
+    return typeof document === "undefined" ? true : document.visibilityState !== "hidden";
   } catch {
     return true;
   }
@@ -77,17 +99,68 @@ function schedulePush(delayMs: number): void {
   if (pushTimer) clearTimeout(pushTimer);
   pushTimer = setTimeout(() => {
     pushTimer = null;
-    void pushOnce();
+    requestPush();
   }, delayMs);
   (pushTimer as { unref?: () => void }).unref?.();
 }
+
+// --- cycle scheduling ------------------------------------------------------
+
+/**
+ * Drain whatever is queued. A push and a pull never interleave, so a pull asked
+ * for mid-push can no longer be dropped on the floor — it is picked up on the
+ * next turn of this loop.
+ */
+async function drain(): Promise<void> {
+  setStatus({ syncing: true });
+  try {
+    while (running && (queuedPull || queuedPush)) {
+      if (queuedPull) {
+        queuedPull = false;
+        await pullOnce();
+      }
+      if (queuedPush) {
+        queuedPush = false;
+        await pushOnce();
+      }
+    }
+  } finally {
+    setStatus({ syncing: false });
+  }
+}
+
+async function pump(): Promise<void> {
+  if (cycle) {
+    await cycle;
+    // Something queued while that cycle was winding down needs a fresh one.
+    if (queuedPull || queuedPush) await pump();
+    return;
+  }
+  cycle = drain();
+  try {
+    await cycle;
+  } finally {
+    cycle = null;
+  }
+}
+
+function requestPull(): void {
+  queuedPull = true;
+  void pump();
+}
+
+function requestPush(): void {
+  queuedPush = true;
+  void pump();
+}
+
+// --- the two halves --------------------------------------------------------
 
 async function pushOnce(): Promise<void> {
   if (!backend || !running || !isOnline()) return;
   const entries = pending();
   if (entries.length === 0) return;
 
-  setStatus({ syncing: true });
   const byTable = new Map<SyncTableName, typeof entries>();
   for (const entry of entries) {
     byTable.set(entry.table, [...(byTable.get(entry.table) ?? []), entry]);
@@ -111,7 +184,6 @@ async function pushOnce(): Promise<void> {
     }
   }
 
-  setStatus({ syncing: false });
   if (failed) {
     const attempts = pending()[0]?.attempts ?? 1;
     schedulePush(Math.min(60_000, 1000 * 2 ** Math.min(attempts, 6)));
@@ -122,11 +194,6 @@ async function pushOnce(): Promise<void> {
 
 async function pullOnce(): Promise<void> {
   if (!backend || !running || !isOnline()) return;
-  if (status.syncing) {
-    pullQueued = true;
-    return;
-  }
-  setStatus({ syncing: true });
   const activeBackend = backend;
   try {
     for (const table of SYNC_TABLES) {
@@ -147,12 +214,6 @@ async function pullOnce(): Promise<void> {
     setStatus({ error: null, online: true });
   } catch (error) {
     setStatus({ error: describe(error), online: isOnline() });
-  } finally {
-    setStatus({ syncing: false });
-    if (pullQueued) {
-      pullQueued = false;
-      void pullOnce();
-    }
   }
 }
 
@@ -170,25 +231,26 @@ export async function startSync(nextBackend: SyncBackend): Promise<void> {
   setStatus({ enabled: true, online: isOnline(), error: null });
 
   setMutationHandler(onLocalMutation);
+  addForegroundListeners();
 
-  if (typeof window !== "undefined" && window.addEventListener) {
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-  }
+  pollTimer = setInterval(() => {
+    if (running && isVisible()) requestPull();
+  }, POLL_MS);
+  (pollTimer as { unref?: () => void }).unref?.();
 
   const userId = nextBackend.currentUserId();
   if (userId && nextBackend.subscribe) {
-    unsubscribeRealtime = nextBackend.subscribe(userId, () => void pullOnce());
+    unsubscribeRealtime = nextBackend.subscribe(userId, () => requestPull());
   }
 
-  await pullOnce();
-  await pushOnce();
+  await syncNow();
 }
 
 export function stopSync(): void {
   running = false;
   backend = null;
-  pullQueued = false;
+  queuedPull = false;
+  queuedPush = false;
   setMutationHandler(null);
   unsubscribeRealtime?.();
   unsubscribeRealtime = null;
@@ -196,18 +258,22 @@ export function stopSync(): void {
     clearTimeout(pushTimer);
     pushTimer = null;
   }
-  status = { ...status, syncing: false };
-  if (typeof window !== "undefined" && window.removeEventListener) {
-    window.removeEventListener("online", handleOnline);
-    window.removeEventListener("offline", handleOffline);
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
   }
+  removeForegroundListeners();
+  status = { ...status, syncing: false };
   setStatus({ enabled: false });
 }
 
 export async function syncNow(): Promise<void> {
-  await pullOnce();
-  await pushOnce();
+  queuedPull = true;
+  queuedPush = true;
+  await pump();
 }
+
+// --- foreground / connectivity --------------------------------------------
 
 function handleOnline(): void {
   setStatus({ online: true });
@@ -218,8 +284,42 @@ function handleOffline(): void {
   setStatus({ online: false });
 }
 
-/** Test hook — run one push/pull cycle synchronously-ish against the backend. */
+/**
+ * Coming back to the app is the moment stale data is most visible, so treat it
+ * as a sync trigger. `pageshow` covers Safari's back/forward cache, which an
+ * installed PWA leans on heavily.
+ */
+function handleForeground(): void {
+  if (!running || !isVisible()) return;
+  setStatus({ online: isOnline() });
+  void syncNow();
+}
+
+function addForegroundListeners(): void {
+  if (typeof window !== "undefined" && window.addEventListener) {
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("focus", handleForeground);
+    window.addEventListener("pageshow", handleForeground);
+  }
+  if (typeof document !== "undefined" && document.addEventListener) {
+    document.addEventListener("visibilitychange", handleForeground);
+  }
+}
+
+function removeForegroundListeners(): void {
+  if (typeof window !== "undefined" && window.removeEventListener) {
+    window.removeEventListener("online", handleOnline);
+    window.removeEventListener("offline", handleOffline);
+    window.removeEventListener("focus", handleForeground);
+    window.removeEventListener("pageshow", handleForeground);
+  }
+  if (typeof document !== "undefined" && document.removeEventListener) {
+    document.removeEventListener("visibilitychange", handleForeground);
+  }
+}
+
+/** Test hook — run one push/pull cycle against the backend. */
 export async function _cycle(): Promise<void> {
-  await pushOnce();
-  await pullOnce();
+  await syncNow();
 }

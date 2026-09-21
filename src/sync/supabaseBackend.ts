@@ -29,7 +29,11 @@ export function createSupabaseBackend(client: SupabaseClient, userId: string): S
         .select("id,user_id,updated_at,deleted_at,data")
         .order("updated_at", { ascending: true })
         .limit(PAGE);
-      if (since) query = query.gt("updated_at", since);
+      // `gte`, not `gt`: the cursor is the newest `updated_at` we have seen, and
+      // another device may have written a row at that very instant. With a
+      // strict `>` such a row is skipped for good. Re-reading the boundary row
+      // costs nothing — applying it again is a no-op under last-write-wins.
+      if (since) query = query.gte("updated_at", since);
 
       const { data, error } = await query;
       if (error) throw new Error(`pull ${table}: ${error.message}`);
@@ -56,7 +60,12 @@ export function createSupabaseBackend(client: SupabaseClient, userId: string): S
       const channel = client
         .channel("planner-sync")
         .on("postgres_changes", { event: "*", schema: "public" }, () => onChange())
-        .subscribe();
+        .subscribe((status) => {
+          // Also pull whenever the socket (re)connects: anything that changed
+          // while it was down produced no event, so only a catch-up pull with
+          // the stored cursor will bring those rows in.
+          if (status === "SUBSCRIBED") onChange();
+        });
       return () => {
         void client.removeChannel(channel);
       };
