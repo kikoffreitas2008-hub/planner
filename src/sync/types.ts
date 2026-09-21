@@ -41,6 +41,8 @@ export interface PullResult {
   rows: SyncRow[];
   /** ISO timestamp to store as the new cursor for this table. */
   cursor: string;
+  /** True when the backend cut the result off at its page size. */
+  hasMore?: boolean;
 }
 
 export interface SyncBackend {

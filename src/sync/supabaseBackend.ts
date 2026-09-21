@@ -53,7 +53,7 @@ export function createSupabaseBackend(client: SupabaseClient, userId: string): S
         deleted_at: entry.deleted_at,
       }));
       const cursor = rows.length ? rows[rows.length - 1].updated_at : (since ?? EPOCH);
-      return { rows, cursor };
+      return { rows, cursor, hasMore: raw.length >= PAGE };
     },
 
     subscribe(_userId, onChange) {

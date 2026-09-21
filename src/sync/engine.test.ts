@@ -169,6 +169,35 @@ test("a row created before startSync (the auth-session race) still reaches the b
   assert.equal(server.get("projects", project.id)?.title, "Created before sign-in resolved");
 });
 
+test("a pre-start row older than the cursor still reaches the backend", async () => {
+  const { backend, server } = createFakeBackend("u1");
+
+  // The iPad made this project, but it never left the device.
+  const project = projects.create({
+    title: "Created on the iPad",
+    mode: "simple",
+    color: "blue",
+    progress_mode: "items",
+  });
+
+  // Later the phone wrote a project, and an earlier sync on this device pulled
+  // it — so this device's cursor now sits *after* its own unsynced row. Being
+  // older than the cursor says nothing about whether the server has it.
+  const later = new Date(Date.now() + 60_000).toISOString();
+  server.put("projects", {
+    ...(getDatabase().projects[project.id] as unknown as SyncRow),
+    id: "phone-project",
+    title: "Created on the phone",
+    updated_at: later,
+  });
+  cursors.setCursor("projects", later);
+
+  await startSync(backend);
+
+  assert.equal(server.get("projects", project.id)?.title, "Created on the iPad");
+  assert.equal(getDatabase().projects["phone-project"].title, "Created on the phone");
+});
+
 test("a pre-start row never overwrites a newer version already on the server", async () => {
   const { backend, server } = createFakeBackend("u1");
 

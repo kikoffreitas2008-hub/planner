@@ -4,7 +4,13 @@ import { getDatabase, setMutationHandler, setUserSettings, upsertRow, type Mutat
 import { getCursor, lastSyncAt, setCursor } from "@/sync/cursors";
 import { compareVersions, shouldApplyRemote } from "@/sync/merge";
 import { ack, enqueue, pending, recordFailure, size } from "@/sync/outbox";
-import { SYNC_TABLES, type SyncBackend, type SyncRow, type SyncTableName } from "@/sync/types";
+import {
+  SYNC_TABLES,
+  type PullResult,
+  type SyncBackend,
+  type SyncRow,
+  type SyncTableName,
+} from "@/sync/types";
 
 export interface SyncStatus {
   enabled: boolean;
@@ -60,10 +66,10 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 let running = false;
 
 /**
- * Tables whose local rows still need a one-time look for writes the outbox never
- * saw, mapped to the cursor as it was when sync started. See `backfillTable`.
+ * Tables still owed a one-time comparison against the server, for writes the
+ * outbox never saw. See `reconcileTable`.
  */
-const backfillSince = new Map<SyncTableName, string | null>();
+const reconcileTables = new Set<SyncTableName>();
 
 // One cycle at a time; anything asked for meanwhile is folded into it.
 let cycle: Promise<void> | null = null;
@@ -209,7 +215,10 @@ async function pullOnce(): Promise<void> {
   for (const table of SYNC_TABLES) {
     if (!running || backend !== activeBackend) return;
     try {
-      const result = await activeBackend.pullRows(table, getCursor(table));
+      // The first pull of each table after sync starts is a full one, so the
+      // local rows can be compared with everything the server holds.
+      const reconcile = reconcileTables.has(table);
+      const result = await activeBackend.pullRows(table, reconcile ? null : getCursor(table));
       if (!running || backend !== activeBackend) return;
       for (const remote of result.rows) {
         const local = snapshot(table, remote.id);
@@ -220,8 +229,11 @@ async function pullOnce(): Promise<void> {
           upsertRow(table as never, remote as never, true);
         }
       }
-      if (result.cursor) setCursor(table, result.cursor);
-      backfillTable(table);
+      const current = getCursor(table);
+      if (result.cursor && (!reconcile || !current || compareVersions(result.cursor, current) > 0)) {
+        setCursor(table, result.cursor);
+      }
+      if (reconcile) reconcileTable(table, result);
     } catch (error) {
       lastError = error;
     }
@@ -234,22 +246,28 @@ async function pullOnce(): Promise<void> {
 }
 
 /**
- * Queue local rows that changed while no mutation handler was attached — before
- * `getSession()` resolved, during the first sign-in's re-keying, or while signed
- * out. Those writes never went through `onLocalMutation`, so the outbox does not
- * know about them and they would otherwise stay on this device for good.
+ * Queue local rows the server does not have, or holds an older version of.
  *
- * Two guards keep this from clobbering newer data, since the backend upsert is
- * blind: it runs only after this table's pull succeeded (a newer remote version
- * has already replaced the local row), and it only takes rows newer than the
- * cursor from before that pull — a row that came from the server is never newer
- * than the cursor. Re-queuing a row the server already has is a harmless upsert.
+ * A write made while no mutation handler was attached — before `getSession()`
+ * resolved, during the first sign-in's re-keying, or while signed out — never
+ * went through `onLocalMutation`, so the outbox does not know about it and it
+ * would stay on this device for good. Nothing local says which rows those are:
+ * the cursor cannot tell (another device may have written later, leaving the
+ * cursor ahead of a row this device never sent), so the only reliable source is
+ * the server itself. `result` is a full pull, already applied to the local
+ * database, so a row that still differs here is one where local is newer or
+ * missing remotely. Comparing after the pull is what keeps the blind backend
+ * upsert from overwriting a newer remote version.
+ *
+ * When the backend cut the pull off at its page size the server's contents are
+ * only partly known, so nothing can be called "missing" — skip rather than push
+ * possibly-stale rows.
  */
-function backfillTable(table: SyncTableName): void {
-  if (!backfillSince.has(table)) return;
-  const since = backfillSince.get(table) ?? null;
-  backfillSince.delete(table);
+function reconcileTable(table: SyncTableName, result: PullResult): void {
+  reconcileTables.delete(table);
+  if (result.hasMore) return;
 
+  const remote = new Map(result.rows.map((row) => [row.id, row]));
   const db = getDatabase();
   const rows: SyncRow[] =
     table === "user_settings"
@@ -260,7 +278,8 @@ function backfillTable(table: SyncTableName): void {
 
   let queued = 0;
   for (const row of rows) {
-    if (since && compareVersions(row.updated_at, since) <= 0) continue;
+    const onServer = remote.get(row.id);
+    if (onServer && compareVersions(row.updated_at, onServer.updated_at) <= 0) continue;
     enqueue(table, row);
     queued += 1;
   }
@@ -286,8 +305,8 @@ export async function startSync(nextBackend: SyncBackend): Promise<void> {
   setMutationHandler(onLocalMutation);
   addForegroundListeners();
 
-  backfillSince.clear();
-  for (const table of SYNC_TABLES) backfillSince.set(table, getCursor(table));
+  reconcileTables.clear();
+  for (const table of SYNC_TABLES) reconcileTables.add(table);
 
   pollTimer = setInterval(() => {
     if (running && isVisible()) requestPull();
@@ -307,7 +326,7 @@ export function stopSync(): void {
   backend = null;
   queuedPull = false;
   queuedPush = false;
-  backfillSince.clear();
+  reconcileTables.clear();
   setMutationHandler(null);
   unsubscribeRealtime?.();
   unsubscribeRealtime = null;
