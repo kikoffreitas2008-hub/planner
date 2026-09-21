@@ -8,66 +8,37 @@ import { formatDuration } from "@/domain/duration";
 import type { ProjectItem } from "@/domain/entities";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
 
-export const ROW_HEIGHT_COMPACT = 72;
-export const ROW_HEIGHT_TABLE = 52;
+export const ROW_HEIGHT = 72;
 
 export type ProjectItemRowProps = {
   item: ProjectItem;
-  layout: "compact" | "table";
   onOpen: () => void;
-  /** Structured tasks show how many subtasks they hold. */
-  subtaskCount?: number;
 };
 
-export function ProjectItemRow({ item, layout, onOpen, subtaskCount }: ProjectItemRowProps) {
+/** One row, identical on every screen size — the phone layout is the layout. */
+export function ProjectItemRow({ item, onOpen }: ProjectItemRowProps) {
   const done = Boolean(item.completed_at);
 
-  const circle = (
-    <Touchable
-      variant="control"
-      haptic="selection"
-      onPress={() => projectItems.setCompleted(item.id, !done)}
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: done }}
-      accessibilityLabel={item.title}
-      hitSlop={8}
-    >
-      <PlatformIcon
-        sf={done ? "checkmark.circle.fill" : "circle"}
-        ion={done ? "checkmark-circle" : "ellipse-outline"}
-        size={22}
-        color={done ? colors.text : colors.textSecondary}
-      />
-    </Touchable>
-  );
-
-  if (layout === "table") {
-    return (
-      <View style={[styles.tableRow, done && styles.done]}>
-        {circle}
-        <Touchable variant="row" onPress={onOpen} style={styles.tableTap}>
-          <Text style={[styles.cellName, done && styles.strike]} numberOfLines={1}>
-            {item.title}
-          </Text>
-          <Text style={[styles.cell, { color: importanceColor(item.importance) }]}>
-            {item.importance ? importanceLabel(item.importance) : "—"}
-          </Text>
-          <Text style={styles.cell}>
-            {item.estimated_minutes ? formatDuration(item.estimated_minutes) : "—"}
-          </Text>
-          <Text style={[styles.cell, styles.cellWide]} numberOfLines={1}>
-            {item.notes ?? ""}
-          </Text>
-          <Text style={styles.cell}>{item.scheduled_date ?? "—"}</Text>
-        </Touchable>
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.compactRow, done && styles.done]}>
-      {circle}
-      <Touchable variant="row" onPress={onOpen} style={styles.compactBody}>
+    <View style={[styles.row, done && styles.done]}>
+      <Touchable
+        variant="control"
+        haptic="selection"
+        onPress={() => projectItems.setCompleted(item.id, !done)}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: done }}
+        accessibilityLabel={item.title}
+        hitSlop={8}
+      >
+        <PlatformIcon
+          sf={done ? "checkmark.circle.fill" : "circle"}
+          ion={done ? "checkmark-circle" : "ellipse-outline"}
+          size={22}
+          color={done ? colors.text : colors.textSecondary}
+        />
+      </Touchable>
+
+      <Touchable variant="row" onPress={onOpen} style={styles.body}>
         <Text style={[styles.name, done && styles.strike]} numberOfLines={1}>
           {item.title}
         </Text>
@@ -78,14 +49,10 @@ export function ProjectItemRow({ item, layout, onOpen, subtaskCount }: ProjectIt
             </Text>
           ) : null}
           {item.scheduled_date ? <Text style={styles.meta}>Scheduled</Text> : null}
-          {subtaskCount !== undefined ? (
-            <Text style={styles.meta}>
-              {subtaskCount} subtask{subtaskCount === 1 ? "" : "s"}
-            </Text>
-          ) : null}
           {item.notes ? <Text style={styles.meta}>Notes</Text> : null}
         </View>
       </Touchable>
+
       {item.estimated_minutes ? (
         <Text style={styles.estimate}>{formatDuration(item.estimated_minutes)}</Text>
       ) : null}
@@ -101,8 +68,8 @@ const styles = StyleSheet.create({
   strike: {
     textDecorationLine: "line-through",
   },
-  compactRow: {
-    height: ROW_HEIGHT_COMPACT,
+  row: {
+    height: ROW_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
@@ -112,17 +79,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.divider,
   },
-  compactBody: {
+  body: {
     flex: 1,
     gap: 2,
     justifyContent: "center",
-    height: "100%",
-  },
-  tableTap: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
     height: "100%",
   },
   name: {
@@ -146,27 +106,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
     overflow: "hidden",
-  },
-  tableRow: {
-    height: ROW_HEIGHT_TABLE,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-  },
-  cellName: {
-    ...typography.body,
-    color: colors.text,
-    flex: 2,
-  },
-  cell: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    flex: 1,
-  },
-  cellWide: {
-    flex: 2,
   },
 });

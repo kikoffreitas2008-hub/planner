@@ -1,12 +1,8 @@
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { DraggableColumn } from "@/components/projects/DraggableColumn";
-import {
-  ProjectItemRow,
-  ROW_HEIGHT_COMPACT,
-  ROW_HEIGHT_TABLE,
-} from "@/components/projects/ProjectItemRow";
+import { ProjectItemRow, ROW_HEIGHT } from "@/components/projects/ProjectItemRow";
 import { ProjectItemSheet } from "@/components/projects/ProjectItemSheet";
 import { Touchable } from "@/components/ui/Touchable";
 import { projectItems, projects } from "@/data/repositories";
@@ -22,19 +18,11 @@ export type ProjectItemListProps = {
   items: readonly ProjectItem[];
   /** Tapping a row opens this instead of the edit sheet (structured tasks). */
   onOpenItem?: (item: ProjectItem) => void;
-  subtaskCounts?: Record<string, number>;
 };
 
-export function ProjectItemList({
-  project,
-  parentId,
-  items,
-  onOpenItem,
-  subtaskCounts,
-}: ProjectItemListProps) {
-  const { width } = useWindowDimensions();
-  const table = width >= 720;
-  const estimatedRowHeight = (table ? ROW_HEIGHT_TABLE : ROW_HEIGHT_COMPACT) + ROW_GAP;
+/** The same list on the phone and on the desktop — there is no wide variant. */
+export function ProjectItemList({ project, parentId, items, onOpenItem }: ProjectItemListProps) {
+  const estimatedRowHeight = ROW_HEIGHT + ROW_GAP;
 
   const [draft, setDraft] = useState("");
   const [sheetItem, setSheetItem] = useState<ProjectItem | null>(null);
@@ -75,8 +63,6 @@ export function ProjectItemList({
         </View>
       </View>
 
-      {table ? <TableHead /> : null}
-
       {items.length === 0 ? (
         <Text style={styles.empty}>No items yet.</Text>
       ) : (
@@ -87,12 +73,7 @@ export function ProjectItemList({
           onReorder={(orderedIds) => projectItems.applyOrder(project.id, orderedIds)}
           renderItem={(item) => (
             <View style={{ paddingBottom: ROW_GAP }}>
-              <ProjectItemRow
-                item={item}
-                layout={table ? "table" : "compact"}
-                onOpen={() => openItem(item)}
-                subtaskCount={subtaskCounts?.[item.id]}
-              />
+              <ProjectItemRow item={item} onOpen={() => openItem(item)} />
             </View>
           )}
         />
@@ -127,18 +108,6 @@ export function ProjectItemList({
   );
 }
 
-function TableHead() {
-  return (
-    <View style={styles.tableHead}>
-      <View style={{ width: 22 }} />
-      <Text style={[styles.th, { flex: 2 }]}>Name</Text>
-      <Text style={[styles.th, { flex: 1 }]}>Importance</Text>
-      <Text style={[styles.th, { flex: 1 }]}>Time</Text>
-      <Text style={[styles.th, { flex: 2 }]}>Notes</Text>
-      <Text style={[styles.th, { flex: 1 }]}>Schedule</Text>
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   wrap: {
@@ -166,18 +135,6 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textSecondary,
     paddingVertical: spacing.md,
-  },
-  tableHead: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingBottom: spacing.xxs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.text,
-  },
-  th: {
-    ...typography.caption,
-    color: colors.text,
   },
   addRow: {
     flexDirection: "row",

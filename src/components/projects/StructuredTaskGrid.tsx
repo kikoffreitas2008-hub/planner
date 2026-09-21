@@ -4,7 +4,6 @@ import { StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-na
 import { GlossyCard } from "@/components/ui/GlossyCard";
 import { Touchable } from "@/components/ui/Touchable";
 import { projectItems } from "@/data/repositories";
-import { useTable } from "@/data/store";
 import type { Project, ProjectItem } from "@/domain/entities";
 import { colors, layoutTokens, palette, radius, spacing, typography } from "@/theme/tokens";
 
@@ -23,7 +22,6 @@ export type StructuredTaskGridProps = {
  */
 export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTaskGridProps) {
   const { width } = useWindowDimensions();
-  const allItems = useTable("project_items");
   const [draft, setDraft] = useState("");
 
   const containerWidth = Math.min(
@@ -33,12 +31,6 @@ export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTas
   const columns = Math.max(2, Math.floor((containerWidth + GAP) / (TARGET_CARD + GAP)));
   const size = (containerWidth - GAP * (columns - 1)) / columns;
   const ink = palette[project.color].ink;
-
-  function subtaskCount(taskId: string): number {
-    return Object.values(allItems).filter(
-      (item) => item.parent_id === taskId && !item.deleted_at,
-    ).length;
-  }
 
   function addTask() {
     const title = draft.trim();
@@ -54,7 +46,6 @@ export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTas
       ) : (
         <View style={styles.grid}>
           {tasks.map((task) => {
-            const count = subtaskCount(task.id);
             const done = Boolean(task.completed_at);
             return (
               <Touchable
@@ -66,11 +57,10 @@ export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTas
               >
                 <GlossyCard color={project.color} style={{ width: size, height: size }}>
                   <View style={styles.taskBody}>
-                    <Text style={[styles.taskTitle, { color: ink }]} numberOfLines={3}>
+                    {/* The card carries the name alone; the subtask count only
+                        matters once the task is open (owner's call). */}
+                    <Text style={[styles.taskTitle, { color: ink }]} numberOfLines={4}>
                       {task.title}
-                    </Text>
-                    <Text style={[styles.taskSubtitle, { color: ink }]}>
-                      {count} subtask{count === 1 ? "" : "s"}
                     </Text>
                   </View>
                 </GlossyCard>
@@ -122,14 +112,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    gap: spacing.xs,
   },
   taskTitle: {
     ...typography.heading,
     textAlign: "center",
-  },
-  taskSubtitle: {
-    ...typography.caption,
   },
   addRow: {
     flexDirection: "row",
