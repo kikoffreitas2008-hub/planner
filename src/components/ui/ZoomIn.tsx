@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { View } from "react-native";
 import Animated, { Keyframe } from "react-native-reanimated";
 
+import { useRevealFallback } from "@/lib/useRevealFallback";
 import { motion } from "@/theme/tokens";
 
 // A short zoom-in on mount and a quicker zoom-out on unmount, for opening and
@@ -19,9 +20,11 @@ const leave = new Keyframe({
 
 /** `disabled` (Reduce Motion) renders the child with no animation. */
 export function ZoomIn({ children, disabled }: { children: ReactNode; disabled?: boolean }) {
+  const ref = useRevealFallback<View>(!disabled);
+
   if (disabled) return <View>{children}</View>;
   return (
-    <Animated.View entering={enter} exiting={leave}>
+    <Animated.View ref={ref} entering={enter} exiting={leave}>
       {children}
     </Animated.View>
   );

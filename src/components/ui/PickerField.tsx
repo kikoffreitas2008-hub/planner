@@ -4,6 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { Touchable } from "@/components/ui/Touchable";
+import { useRevealFallback } from "@/lib/useRevealFallback";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
 
 export type PickerFieldProps = {
@@ -30,6 +31,7 @@ export function PickerField({
 }: PickerFieldProps) {
   const [open, setOpen] = useState(defaultOpen);
   const hasValue = value.trim().length > 0;
+  const ref = useRevealFallback<View>(open);
 
   return (
     <View style={styles.wrap}>
@@ -52,7 +54,7 @@ export function PickerField({
         />
       </Touchable>
       {open ? (
-        <Animated.View entering={FadeIn.duration(140)} style={styles.picker}>
+        <Animated.View ref={ref} entering={FadeIn.duration(140)} style={styles.picker}>
           {children}
         </Animated.View>
       ) : null}

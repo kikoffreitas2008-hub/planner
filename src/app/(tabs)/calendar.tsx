@@ -28,6 +28,7 @@ import {
 import type { ISODate } from "@/domain/date";
 import type { RecurrenceScope } from "@/domain/recurrenceMutation";
 import { formatClock, formatDMY, nextDate, previousDate, todayInLisbon } from "@/lib/today";
+import { useRevealFallback } from "@/lib/useRevealFallback";
 import { colors, palette, spacing, typography } from "@/theme/tokens";
 
 type FormState =
@@ -50,6 +51,7 @@ export default function CalendarScreen() {
     params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? (params.date as ISODate) : todayInLisbon(),
   );
   const [form, setForm] = useState<FormState>(null);
+  const bodyRef = useRevealFallback<View>(!reduceMotion, view);
 
   const range = useMemo(() => {
     if (view === "day") return { start: focusDate, end: focusDate };
@@ -146,6 +148,7 @@ export default function CalendarScreen() {
       </View>
 
       <Animated.View
+        ref={bodyRef}
         // Re-key on the view so Month↔Week↔Day crossfades; date shifts within
         // a view update in place (the timeline animates its own transition).
         key={reduceMotion ? undefined : view}

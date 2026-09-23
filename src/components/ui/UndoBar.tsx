@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Touchable } from "@/components/ui/Touchable";
 import { undoLast, useUndoBar } from "@/data/undoBar";
+import { useRevealFallback } from "@/lib/useRevealFallback";
 import { colors, layoutTokens, radius, shadow, spacing, typography } from "@/theme/tokens";
 
 const TAB_BAR_HEIGHT = 68;
@@ -13,12 +14,13 @@ export function UndoBar() {
   const { visible, message } = useUndoBar();
   const insets = useSafeAreaInsets();
   const bottomInset = Platform.OS === "web" ? 0 : insets.bottom;
+  const ref = useRevealFallback<View>(visible);
 
   if (!visible) return null;
 
   return (
     <View pointerEvents="box-none" style={[styles.wrap, { bottom: TAB_BAR_HEIGHT + bottomInset + spacing.sm }]}>
-      <Animated.View entering={FadeInDown.duration(200)} style={styles.bar}>
+      <Animated.View ref={ref} entering={FadeInDown.duration(200)} style={styles.bar}>
         <Text style={styles.message}>{message}</Text>
         <Touchable onPress={undoLast} haptic="medium" hitSlop={8} style={styles.undoHit}>
           <Text style={styles.undo}>Undo</Text>
