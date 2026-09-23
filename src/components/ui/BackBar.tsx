@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
@@ -11,17 +11,26 @@ export type BackBarProps = {
   title: string;
   subtitle?: string;
   right?: ReactNode;
+  /** Where to go when there's no history to pop (e.g. this screen was
+   * opened directly from a bookmark or shared link). Defaults to the
+   * projects list, which every pushed stack screen today descends from. */
+  fallbackHref?: Href;
 };
 
 /** The top bar for a pushed stack screen: a back control plus the title. */
-export function BackBar({ title, subtitle, right }: BackBarProps) {
+export function BackBar({ title, subtitle, right, fallbackHref = "/projects" }: BackBarProps) {
   const router = useRouter();
+
+  function goBack() {
+    if (router.canGoBack()) router.back();
+    else router.replace(fallbackHref);
+  }
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safe}>
       <View style={styles.bar}>
         <Touchable
-          onPress={() => router.back()}
+          onPress={goBack}
           accessibilityLabel="Back"
           hitSlop={10}
           style={styles.back}
