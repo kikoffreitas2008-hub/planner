@@ -60,7 +60,15 @@ export default function ProjectsScreen() {
         onClose={() => setCreateOpen(false)}
         onCreated={(id) => {
           setCreateOpen(false);
-          router.push({ pathname: "/project/[id]", params: { id } });
+          // Closing this sheet and pushing the project screen in the same
+          // tick races the sheet's exit transition against the new screen's
+          // ZoomIn entrance (both Reanimated `entering`/`exiting` on web);
+          // losing that race once left the destination screen's content at
+          // 0x0 (invisible) until a reload. Pushing a frame later lets the
+          // sheet's teardown finish first.
+          requestAnimationFrame(() => {
+            router.push({ pathname: "/project/[id]", params: { id } });
+          });
         }}
       />
 
