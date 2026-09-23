@@ -16,6 +16,16 @@ export type PlusMenuOption = {
 /** The contextual `+` button. Its options change per tab (blueprint/01 section 2). */
 export function PlusMenu({ options }: { options: readonly PlusMenuOption[] }) {
   const [open, setOpen] = useState(false);
+  // Bumped on every open so PopIn's inner Animated.View always remounts
+  // fresh. The Modal itself stays mounted across opens (visible={open}) so
+  // its own fade-out still plays, but its content doesn't: react-native-web
+  // toggles the Modal's wrapper via `visibility` rather than unmounting it,
+  // and PopIn's entering animation only plays once, on mount. If an open
+  // races a still-settling close, that wrapper's `visibility: hidden` can
+  // get stuck — nothing re-triggers to flip it back since there's no new
+  // mount. Remounting PopIn on every open sidesteps that regardless of why
+  // the stale state got stuck.
+  const [openId, setOpenId] = useState(0);
 
   return (
     <>
@@ -23,7 +33,10 @@ export function PlusMenu({ options }: { options: readonly PlusMenuOption[] }) {
         sf="plus"
         ion="add"
         accessibilityLabel="Create"
-        onPress={() => setOpen(true)}
+        onPress={() => {
+          setOpenId((n) => n + 1);
+          setOpen(true);
+        }}
       />
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <View style={styles.root}>
@@ -32,7 +45,7 @@ export function PlusMenu({ options }: { options: readonly PlusMenuOption[] }) {
             accessibilityLabel="Dismiss menu"
             onPress={() => setOpen(false)}
           />
-          <PopIn style={styles.menu}>
+          <PopIn key={openId} style={styles.menu}>
             {options.map((option) => (
               <Touchable
                 key={option.key}
