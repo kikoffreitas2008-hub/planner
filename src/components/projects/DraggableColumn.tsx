@@ -21,6 +21,9 @@ import { colors, spacing } from "@/theme/tokens";
 const SPRING = { damping: 22, stiffness: 200 } as const;
 const HANDLE_WIDTH = 40;
 const LONG_PRESS_MS = 250;
+/** Movement past this many px before the long-press completes counts as a
+ * drag attempt rather than a tap, even though the pan itself fails. */
+const DRAG_ATTEMPT_PX = 6;
 
 type Indexed = Record<string, number>;
 type Heights = Record<string, number>;
@@ -58,6 +61,14 @@ export type DraggableColumnProps<T extends { id: string }> = {
   dragMode?: "handle" | "longPress";
   /** Used for layout before rows have measured themselves. */
   estimatedRowHeight?: number;
+  /**
+   * `longPress` mode only: called when a touch moves more than a few px
+   * before the long-press hold completes, i.e. a drag was attempted but
+   * didn't activate. Consumers use this to suppress the tap-to-open handler
+   * they layer over the row, so a failed drag does nothing instead of
+   * falling through to a tap.
+   */
+  onDragAttempt?: (id: string) => void;
 };
 
 /**
@@ -74,6 +85,7 @@ export function DraggableColumn<T extends { id: string }>({
   enabled = true,
   dragMode = "handle",
   estimatedRowHeight = 64,
+  onDragAttempt,
 }: DraggableColumnProps<T>) {
   const idsKey = data.map((item) => item.id).join("|");
   const ids = useMemo(() => (idsKey ? idsKey.split("|") : []), [idsKey]);
@@ -124,6 +136,7 @@ export function DraggableColumn<T extends { id: string }>({
           startTop={startTop}
           onMeasure={measure}
           onCommit={commit}
+          onDragAttempt={onDragAttempt}
         >
           {renderItem(item)}
         </Row>
@@ -146,6 +159,7 @@ type RowProps = {
   startTop: SharedValue<number>;
   onMeasure: (id: string, height: number) => void;
   onCommit: () => void;
+  onDragAttempt?: (id: string) => void;
   children: ReactNode;
 };
 
@@ -163,9 +177,11 @@ function Row({
   startTop,
   onMeasure,
   onCommit,
+  onDragAttempt,
   children,
 }: RowProps) {
   const wholeRow = dragMode === "longPress";
+  const touchOrigin = useSharedValue({ x: 0, y: 0 });
 
   function topOf(targetId: string): number {
     "worklet";
@@ -186,6 +202,24 @@ function Row({
       return pan
         .activeOffsetY([-4, 4])
         .failOffsetX([-16, 16])
+        .onTouchesDown((event) => {
+          const touch = event.allTouches[0];
+          if (touch) touchOrigin.value = { x: touch.x, y: touch.y };
+        })
+        .onTouchesMove((event) => {
+          // Fires for every touch move regardless of activation state, so it
+          // also catches the case the pan itself fails on: a drag started
+          // before the long-press hold completed. Tell the consumer so it
+          // can keep this from also being read as a tap.
+          if (!wholeRow || !onDragAttempt) return;
+          const touch = event.allTouches[0];
+          if (!touch) return;
+          const dx = touch.x - touchOrigin.value.x;
+          const dy = touch.y - touchOrigin.value.y;
+          if (Math.hypot(dx, dy) > DRAG_ATTEMPT_PX) {
+            runOnJS(onDragAttempt)(id);
+          }
+        })
         .onStart(() => {
           const top = topOf(id);
           startTop.value = top;
@@ -218,7 +252,7 @@ function Row({
         });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [id, ids, enabled, wholeRow, estimate, onCommit],
+    [id, ids, enabled, wholeRow, estimate, onCommit, onDragAttempt, touchOrigin],
   );
 
   const rowStyle = useAnimatedStyle(() => {

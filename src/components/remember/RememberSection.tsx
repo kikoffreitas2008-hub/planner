@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { SwipeableRow } from "@/components/agenda/SwipeableRow";
@@ -32,10 +32,24 @@ export function RememberSection() {
   const blankId = items.find((item) => !item.title.trim())?.id ?? null;
   const activeEditId = editingId ?? blankId;
 
+  // A drag that fails (moved before the long-press hold completed) still
+  // ends in a tap-like release; without this the row falls through to
+  // opening the editor, which reads as "reordering edited my reminder".
+  // Keyed per id and cleared on read, so a real tap right after is unaffected.
+  const suppressTapUntil = useRef<Record<string, number>>({});
+
   function commit(id: string, text: string) {
     const title = text.trim();
     if (title) remember.update(id, { title });
     else remember.softDelete(id);
+    setEditingId(null);
+  }
+
+  /** Escape: discard whatever was typed instead of leaving the row stuck in
+   * edit mode (see commit() — it's the only path that clears editingId, and
+   * a blur triggered by Escape doesn't reliably fire onEndEditing on web). */
+  function cancelEdit(id: string, hadTitle: boolean) {
+    if (!hadTitle) remember.softDelete(id);
     setEditingId(null);
   }
 
@@ -60,6 +74,9 @@ export function RememberSection() {
             dragMode="longPress"
             estimatedRowHeight={layoutTokens.rememberHeight + spacing.sm}
             onReorder={(orderedIds) => remember.applyOrder(orderedIds)}
+            onDragAttempt={(id) => {
+              suppressTapUntil.current[id] = Date.now() + 400;
+            }}
             renderItem={(item) => (
               <View style={styles.rowGap}>
                 <SwipeableRow
@@ -74,6 +91,11 @@ export function RememberSection() {
                           defaultValue={item.title}
                           onSubmitEditing={(event) => commit(item.id, event.nativeEvent.text)}
                           onEndEditing={(event) => commit(item.id, event.nativeEvent.text)}
+                          onKeyPress={(event) => {
+                            if (event.nativeEvent.key === "Escape") {
+                              cancelEdit(item.id, !!item.title.trim());
+                            }
+                          }}
                           returnKeyType="done"
                           placeholder="One line to remember"
                           placeholderTextColor={palette[item.color].ink}
@@ -84,7 +106,13 @@ export function RememberSection() {
                         <Touchable
                           variant="row"
                           style={styles.textWrap}
-                          onPress={() => setEditingId(item.id)}
+                          onPress={() => {
+                            // A drag that failed (moved before the hold
+                            // completed) still releases like a tap; don't
+                            // let it fall through to opening the editor.
+                            if ((suppressTapUntil.current[item.id] ?? 0) > Date.now()) return;
+                            setEditingId(item.id);
+                          }}
                           // Holding a card is only for reordering. Having a
                           // long-press handler makes Pressable skip `onPress`
                           // on release, so lifting a held card does not open
