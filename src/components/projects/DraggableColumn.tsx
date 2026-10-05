@@ -97,7 +97,10 @@ export function DraggableColumn<T extends { id: string }>({
   const activeTop = useSharedValue(0);
   const startTop = useSharedValue(0);
 
-  const [totalHeight, setTotalHeight] = useState(0);
+  // Mirrors `heights` for rendering. The total is derived from the current
+  // ids, so rows that leave (archived, deleted) stop taking up room.
+  const [measured, setMeasured] = useState<Heights>({});
+  const totalHeight = ids.reduce((sum, entry) => sum + (measured[entry] ?? estimatedRowHeight), 0);
 
   useEffect(() => {
     positions.value = indexMap(ids);
@@ -108,9 +111,9 @@ export function DraggableColumn<T extends { id: string }>({
     (id: string, height: number) => {
       if (Math.abs((heights.value[id] ?? 0) - height) < 0.5) return;
       heights.value = { ...heights.value, [id]: height };
-      setTotalHeight(ids.reduce((sum, entry) => sum + (heights.value[entry] ?? 0), 0));
+      setMeasured((current) => ({ ...current, [id]: height }));
     },
-    [heights, ids],
+    [heights],
   );
 
   const commit = useCallback(() => {
@@ -119,7 +122,7 @@ export function DraggableColumn<T extends { id: string }>({
   }, [ids, onReorder, positions]);
 
   return (
-    <View style={{ height: totalHeight || ids.length * estimatedRowHeight }}>
+    <View style={{ height: totalHeight }}>
       {data.map((item) => (
         <Row
           key={item.id}

@@ -125,3 +125,56 @@ test("structured progress counts leaf subtasks", () => {
   const progress = calculateProjectProgress(all, "structured", "items");
   assert.deepEqual({ completed: progress.completed, total: progress.total }, { completed: 1, total: 2 });
 });
+
+test("projects.applyOrder writes ascending keys in the dropped order", () => {
+  const a = makeProject({ title: "A" });
+  const b = makeProject({ title: "B" });
+  const c = makeProject({ title: "C" });
+
+  projects.applyOrder([c.id, a.id, b.id]);
+
+  const key = (id: string) => getDatabase().projects[id].manual_sort_key;
+  assert.ok(key(c.id) < key(a.id) && key(a.id) < key(b.id));
+});
+
+test("project and task colours can change after creation; a task colour wins in the agenda", () => {
+  const project = makeProject({ color: "green", mode: "structured" });
+  projects.update(project.id, { color: "pink" });
+  assert.equal(getDatabase().projects[project.id].color, "pink");
+
+  const task = projectItems.create(project.id, null, { title: "Walls" });
+  assert.equal(getDatabase().project_items[task.id].color, null);
+  projectItems.update(task.id, { color: "orange" });
+  projectItems.schedule(task.id, {
+    scheduled_date: "2026-09-10",
+    scheduled_all_day: true,
+    scheduled_starts_at: null,
+    scheduled_ends_at: null,
+  });
+
+  const entry = projectItemAgendaItem(
+    getDatabase().project_items[task.id],
+    getDatabase().projects[project.id],
+  );
+  assert.equal(entry.color, "orange");
+});
+
+test("an archived item stays done and still counts toward progress", () => {
+  const project = makeProject();
+  const done = projectItems.create(project.id, null, { title: "done" });
+  projectItems.create(project.id, null, { title: "open" });
+  projectItems.setCompleted(done.id, true);
+  projectItems.archive(done.id);
+
+  const stored = getDatabase().project_items[done.id];
+  assert.ok(stored.archived_at);
+  assert.ok(stored.completed_at);
+
+  const all = Object.values(getDatabase().project_items).filter((item) => !item.deleted_at);
+  const progress = calculateProjectProgress(all, "simple", "items");
+  assert.equal(progress.completed, 1);
+  assert.equal(progress.total, 2);
+
+  projectItems.unarchive(done.id);
+  assert.equal(getDatabase().project_items[done.id].archived_at, null);
+});

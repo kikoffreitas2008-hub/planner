@@ -114,11 +114,11 @@ function eachDate(start: ISODate, end: ISODate): ISODate[] {
   return dates;
 }
 
-/** A scheduled project item as an agenda entry (colour and title from the project). */
+/** A scheduled project item as an agenda entry (its own colour if set, else the project's). */
 export function projectItemAgendaItem(item: ProjectItem, project: Project): AgendaItem {
   return {
     allDay: item.scheduled_all_day,
-    color: project.color,
+    color: item.color ?? project.color,
     completedAt: item.completed_at,
     createdAt: item.created_at,
     date: item.scheduled_date as ISODate,

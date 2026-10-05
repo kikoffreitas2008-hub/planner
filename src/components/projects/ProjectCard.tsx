@@ -17,11 +17,19 @@ export type ProjectCardProps = {
   size: number;
   showProgress: boolean;
   onPress: () => void;
+  onLongPress?: () => void;
   /** Smaller type for the structured task grid. */
   compact?: boolean;
 };
 
-export function ProjectCard({ project, size, showProgress, onPress, compact }: ProjectCardProps) {
+export function ProjectCard({
+  project,
+  size,
+  showProgress,
+  onPress,
+  onLongPress,
+  compact,
+}: ProjectCardProps) {
   const progress = useProjectProgress(project);
   const ink = palette[project.color].ink;
 
@@ -38,7 +46,13 @@ export function ProjectCard({ project, size, showProgress, onPress, compact }: P
   });
 
   return (
-    <Touchable variant="card" onPress={onPress} accessibilityLabel={project.title}>
+    <Touchable
+      variant="card"
+      onPress={onPress}
+      onLongPress={onLongPress}
+      accessibilityLabel={project.title}
+      accessibilityHint={onLongPress ? "Touch and hold, then drag to reorder." : undefined}
+    >
       <GlossyCard color={project.color} style={{ width: size, height: size }}>
         <View style={[styles.body, !showProgress && styles.bodyCentered]}>
           {/* The width sits on a View: a numberOfLines Text on web is capped at

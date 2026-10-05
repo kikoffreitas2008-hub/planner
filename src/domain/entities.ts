@@ -74,9 +74,19 @@ interface ProjectItemBase extends SyncEntity {
   project_id: EntityId;
   parent_id: EntityId | null;
   title: string;
+  /**
+   * Own colour of a structured project's task card; null or missing (rows
+   * written before the field existed) means "use the project's colour".
+   */
+  color?: PaletteColor | null;
   estimated_minutes: number | null;
   notes: string | null;
   completed_at: ISODateTime | null;
+  /**
+   * Set when a completed item is filed away: hidden from the project list but
+   * still counted as done. Missing on rows written before the field existed.
+   */
+  archived_at?: ISODateTime | null;
   manual_sort_key: string;
   scheduled_date: ISODate | null;
   scheduled_all_day: boolean;

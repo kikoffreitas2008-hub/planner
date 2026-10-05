@@ -36,7 +36,8 @@ export function useProject(id: string | undefined): Project | null {
   return useMemo(() => (id ? (projects[id] ?? null) : null), [projects, id]);
 }
 
-/** Items of a project under one parent (null = top level), in display order. */
+/** Items of a project under one parent (null = top level), in display order.
+ * Archived items are left out; see useArchivedProjectItems. */
 export function useProjectItems(
   projectId: string | undefined,
   parentId: string | null,
@@ -48,10 +49,34 @@ export function useProjectItems(
     if (!projectId) return [];
     const project = projects[projectId];
     const scoped = Object.values(items).filter(
-      (item) => item.project_id === projectId && item.parent_id === parentId && !item.deleted_at,
+      (item) =>
+        item.project_id === projectId &&
+        item.parent_id === parentId &&
+        !item.deleted_at &&
+        !item.archived_at,
     );
     return orderProjectItems(scoped, project?.order_mode ?? "importance_default");
   }, [items, projects, projectId, parentId]);
+}
+
+/** Archived items under one parent, most recently archived first. */
+export function useArchivedProjectItems(
+  projectId: string | undefined,
+  parentId: string | null,
+): readonly ProjectItem[] {
+  const items = useTable("project_items");
+  return useMemo(() => {
+    if (!projectId) return [];
+    return Object.values(items)
+      .filter(
+        (item) =>
+          item.project_id === projectId &&
+          item.parent_id === parentId &&
+          !item.deleted_at &&
+          item.archived_at,
+      )
+      .sort((a, b) => (b.archived_at ?? "").localeCompare(a.archived_at ?? ""));
+  }, [items, projectId, parentId]);
 }
 
 /** All non-deleted items of a project (any depth) — for progress and totals. */

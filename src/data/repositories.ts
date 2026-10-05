@@ -273,6 +273,16 @@ export const projects = {
     touch("projects", id, { order_mode: "importance_default" });
   },
 
+  /** Persist the order of the project grid (fractional keys). */
+  applyOrder(orderedIds: readonly string[]): void {
+    let previous: string | null = null;
+    for (const id of orderedIds) {
+      const key = generateKeyBetween(previous, null);
+      touch("projects", id, { manual_sort_key: key });
+      previous = key;
+    }
+  },
+
   /** Permanent delete: the project and its items, soft-deleted, plus a tombstone. */
   purge(id: string): void {
     const project = getDatabase().projects[id];
@@ -319,10 +329,12 @@ export const projectItems = {
       project_id: projectId,
       parent_id: parentId,
       title: input.title.trim(),
+      color: null,
       importance: input.importance ?? null,
       estimated_minutes: input.estimated_minutes ?? null,
       notes: input.notes?.trim() ? input.notes.trim() : null,
       completed_at: null,
+      archived_at: null,
       scheduled_date: null,
       scheduled_all_day: false,
       scheduled_starts_at: null,
@@ -338,6 +350,15 @@ export const projectItems = {
 
   setCompleted(id: string, completed: boolean): void {
     touch("project_items", id, { completed_at: completed ? nowISO() : null });
+  },
+
+  /** File a completed item away: off the list, still counted as done. */
+  archive(id: string): void {
+    touch("project_items", id, { archived_at: nowISO() });
+  },
+
+  unarchive(id: string): void {
+    touch("project_items", id, { archived_at: null });
   },
 
   setImportance(id: string, importance: ProjectItem["importance"]): void {

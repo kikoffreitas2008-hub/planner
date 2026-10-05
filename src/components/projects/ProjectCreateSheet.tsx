@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { ColorDot } from "@/components/ui/ColorDot";
+import { ColorSwatches } from "@/components/ui/ColorSwatches";
 import { Touchable } from "@/components/ui/Touchable";
 import { projects } from "@/data/repositories";
-import { palette, colors, radius, shadow, spacing, typography, type PaletteKey } from "@/theme/tokens";
-
-const PALETTE_KEYS = Object.keys(palette) as PaletteKey[];
+import { colors, radius, shadow, spacing, typography, type PaletteKey } from "@/theme/tokens";
 
 export type ProjectCreateSheetProps = {
   visible: boolean;
@@ -112,20 +110,7 @@ export function ProjectCreateSheet({ visible, onClose, onCreated }: ProjectCreat
             />
 
             <Text style={styles.fieldLabel}>Colour</Text>
-            <View style={styles.swatches}>
-              {PALETTE_KEYS.map((key) => (
-                <Touchable
-                  key={key}
-                  haptic="selection"
-                  onPress={() => setColor(key)}
-                  accessibilityLabel={key}
-                  accessibilityState={{ selected: color === key }}
-                  style={[styles.swatch, color === key && styles.swatchActive]}
-                >
-                  <ColorDot color={key} size={24} />
-                </Touchable>
-              ))}
-            </View>
+            <ColorSwatches value={color} onChange={setColor} />
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -246,20 +231,6 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: colors.text,
-  },
-  swatches: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  swatch: {
-    padding: 3,
-    borderRadius: radius.pill,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  swatchActive: {
-    borderColor: colors.text,
   },
   error: {
     ...typography.caption,

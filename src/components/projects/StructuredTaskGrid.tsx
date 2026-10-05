@@ -34,7 +34,6 @@ export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTas
   );
   const columns = Math.max(2, Math.floor((containerWidth + GAP) / (TARGET_CARD + GAP)));
   const size = (containerWidth - GAP * (columns - 1)) / columns;
-  const ink = palette[project.color].ink;
   const lineWidth = size - spacing.lg * 2 + TITLE_BLEED * 2;
 
   function addTask() {
@@ -52,6 +51,8 @@ export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTas
         <View style={styles.grid}>
           {tasks.map((task) => {
             const done = Boolean(task.completed_at);
+            const color = task.color ?? project.color;
+            const ink = palette[color].ink;
             // Size the name to the card so no word is broken across lines.
             const fitted = fitTitleSize({
               title: task.title,
@@ -69,7 +70,7 @@ export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTas
                 accessibilityLabel={task.title}
                 style={done ? styles.done : undefined}
               >
-                <GlossyCard color={project.color} style={{ width: size, height: size }}>
+                <GlossyCard color={color} style={{ width: size, height: size }}>
                   <View style={styles.taskBody}>
                     {/* The card carries the name alone; the subtask count only
                         matters once the task is open (owner's call). */}

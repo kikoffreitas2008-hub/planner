@@ -3,7 +3,6 @@ import { StyleSheet, Text, View } from "react-native";
 import { importanceColor, importanceLabel } from "@/components/projects/ImportancePicker";
 import { PlatformIcon } from "@/components/ui/PlatformIcon";
 import { Touchable } from "@/components/ui/Touchable";
-import { projectItems } from "@/data/repositories";
 import { formatDuration } from "@/domain/duration";
 import type { ProjectItem } from "@/domain/entities";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
@@ -13,10 +12,11 @@ export const ROW_HEIGHT = 72;
 export type ProjectItemRowProps = {
   item: ProjectItem;
   onOpen: () => void;
+  onToggleComplete: () => void;
 };
 
 /** One row, identical on every screen size — the phone layout is the layout. */
-export function ProjectItemRow({ item, onOpen }: ProjectItemRowProps) {
+export function ProjectItemRow({ item, onOpen, onToggleComplete }: ProjectItemRowProps) {
   const done = Boolean(item.completed_at);
 
   return (
@@ -24,7 +24,7 @@ export function ProjectItemRow({ item, onOpen }: ProjectItemRowProps) {
       <Touchable
         variant="control"
         haptic="selection"
-        onPress={() => projectItems.setCompleted(item.id, !done)}
+        onPress={onToggleComplete}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: done }}
         accessibilityLabel={item.title}

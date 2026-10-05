@@ -1,7 +1,10 @@
+import { useRef } from "react";
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
+import { DraggableGrid } from "@/components/projects/DraggableGrid";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { Touchable } from "@/components/ui/Touchable";
+import { projects as projectsRepo } from "@/data/repositories";
 import type { Project } from "@/domain/entities";
 import { colors, layoutTokens, spacing, typography } from "@/theme/tokens";
 
@@ -34,22 +37,39 @@ export function ProjectGrid({
   const columns = Math.max(2, Math.floor((containerWidth + GAP) / (TARGET_CARD + GAP)));
   const size = Math.min(MAX_CARD, (containerWidth - GAP * (columns - 1)) / columns);
 
+  // A drag that fails (moved before the hold completed) still releases like a
+  // tap; this keeps it from opening the project (same as Remember cards).
+  const suppressTapUntil = useRef<Record<string, number>>({});
+
   return (
     <View style={styles.wrap}>
       {projects.length === 0 ? (
         <Text style={styles.empty}>No projects yet. Tap + to start one.</Text>
       ) : (
-        <View style={styles.grid}>
-          {projects.map((project) => (
+        <DraggableGrid
+          data={projects}
+          cellSize={size}
+          columns={columns}
+          gap={GAP}
+          onReorder={(orderedIds) => projectsRepo.applyOrder(orderedIds)}
+          onDragAttempt={(id) => {
+            suppressTapUntil.current[id] = Date.now() + 400;
+          }}
+          renderItem={(project) => (
             <ProjectCard
-              key={project.id}
               project={project}
               size={size}
               showProgress={showProgress}
-              onPress={() => onOpenProject(project.id)}
+              onPress={() => {
+                if ((suppressTapUntil.current[project.id] ?? 0) > Date.now()) return;
+                onOpenProject(project.id);
+              }}
+              // Holding a card is only for reordering; a long-press handler
+              // makes Pressable skip `onPress` when the held card is let go.
+              onLongPress={() => {}}
             />
-          ))}
-        </View>
+          )}
+        />
       )}
 
       <Touchable variant="row" onPress={onOpenArchived} style={styles.archived}>
@@ -62,11 +82,6 @@ export function ProjectGrid({
 const styles = StyleSheet.create({
   wrap: {
     gap: spacing.lg,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: GAP,
   },
   empty: {
     ...typography.body,

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { ColorSwatches } from "@/components/ui/ColorSwatches";
 import { Touchable } from "@/components/ui/Touchable";
 import { projects } from "@/data/repositories";
 import { offerUndo } from "@/data/undoBar";
@@ -44,6 +45,12 @@ export function ProjectSettingsSheet({
           </View>
 
           <View style={styles.body}>
+            <Text style={styles.sectionLabel}>Colour</Text>
+            <ColorSwatches
+              value={project.color}
+              onChange={(color) => projects.update(project.id, { color })}
+            />
+
             <Text style={styles.sectionLabel}>Progress</Text>
             <View style={styles.segment}>
               {(["items", "time"] as const).map((option) => (
