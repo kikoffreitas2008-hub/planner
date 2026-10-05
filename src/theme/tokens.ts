@@ -135,7 +135,7 @@ export const layoutTokens = Object.freeze({
   quoteMaxHeight: 360,
   taskMinHeight: 120,
   projectMinHeight: 168,
-  rememberHeight: 48,
+  rememberHeight: 55,
   dividerWidth: "72%" as const,
   dividerMaxWidth: 180,
 });

@@ -19,6 +19,7 @@ import { remember } from "@/data/repositories";
 import type { AgendaItem } from "@/domain/agenda";
 import { quoteForLocalDate, type BibleQuote } from "@/domain/dailyQuote";
 import type { RecurrenceScope } from "@/domain/recurrenceMutation";
+import { primeKeyboard } from "@/lib/keyboardPrime";
 import { formatDayHeading, nextDate, todayInLisbon } from "@/lib/today";
 
 const QUOTES = quotesData as BibleQuote[];
@@ -83,7 +84,12 @@ export default function TodayScreen() {
               {
                 key: "reminder",
                 label: "New reminder",
-                onPress: () => remember.create(viewDate, ""),
+                onPress: () => {
+                  // Raise the iPhone keyboard now, inside the tap; the new
+                  // card's input takes it over when it mounts.
+                  primeKeyboard();
+                  remember.create(viewDate, "");
+                },
               },
               {
                 key: "routine",

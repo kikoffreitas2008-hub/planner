@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Overlay } from "@/components/ui/Overlay";
 import { PopIn } from "@/components/ui/PopIn";
 import { RoundIconButton } from "@/components/ui/RoundIconButton";
 import { Touchable } from "@/components/ui/Touchable";
@@ -17,14 +18,10 @@ export type PlusMenuOption = {
 export function PlusMenu({ options }: { options: readonly PlusMenuOption[] }) {
   const [open, setOpen] = useState(false);
   // Bumped on every open so PopIn's inner Animated.View always remounts
-  // fresh. The Modal itself stays mounted across opens (visible={open}) so
-  // its own fade-out still plays, but its content doesn't: react-native-web
-  // toggles the Modal's wrapper via `visibility` rather than unmounting it,
-  // and PopIn's entering animation only plays once, on mount. If an open
-  // races a still-settling close, that wrapper's `visibility: hidden` can
-  // get stuck — nothing re-triggers to flip it back since there's no new
-  // mount. Remounting PopIn on every open sidesteps that regardless of why
-  // the stale state got stuck.
+  // fresh. On native the Modal stays mounted across opens (visible={open}),
+  // and PopIn's entering animation only plays once, on mount; if an open
+  // races a still-settling close the content could stay hidden. Remounting
+  // PopIn on every open sidesteps that. (On web the Overlay unmounts on close.)
   const [openId, setOpenId] = useState(0);
 
   return (
@@ -38,7 +35,7 @@ export function PlusMenu({ options }: { options: readonly PlusMenuOption[] }) {
           setOpen(true);
         }}
       />
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <Overlay visible={open} onRequestClose={() => setOpen(false)}>
         <View style={styles.root}>
           <Pressable
             style={StyleSheet.absoluteFill}
@@ -65,7 +62,7 @@ export function PlusMenu({ options }: { options: readonly PlusMenuOption[] }) {
             ))}
           </PopIn>
         </View>
-      </Modal>
+      </Overlay>
     </>
   );
 }

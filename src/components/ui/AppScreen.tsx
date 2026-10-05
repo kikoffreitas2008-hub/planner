@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { colors, layoutTokens, spacing, typography } from "@/theme/tokens";
@@ -31,7 +31,10 @@ export function AppScreen({
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
+      // Native only: react-native-web treats every scroll as a drag — including
+      // the browser scrolling a just-focused input into view, or iOS making
+      // room for its keyboard — and would blur the input it just focused.
+      keyboardDismissMode={Platform.OS === "web" ? "none" : "on-drag"}
       contentInsetAdjustmentBehavior="automatic"
       // iOS momentum without the "sticks then jumps" feel on a short list.
       decelerationRate="normal"

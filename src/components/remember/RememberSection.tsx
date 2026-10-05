@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Platform, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { SwipeableRow } from "@/components/agenda/SwipeableRow";
 import { DraggableColumn } from "@/components/projects/DraggableColumn";
@@ -10,7 +10,9 @@ import { Touchable } from "@/components/ui/Touchable";
 import { remember } from "@/data/repositories";
 import { useTable } from "@/data/store";
 import { offerUndo } from "@/data/undoBar";
+import type { RememberItem } from "@/domain/entities";
 import { visibleRememberItems } from "@/domain/remember";
+import { releaseKeyboard } from "@/lib/keyboardPrime";
 import {
   colors,
   layoutTokens,
@@ -40,14 +42,12 @@ export function RememberSection() {
 
   function commit(id: string, text: string) {
     const title = text.trim();
-    if (title) remember.update(id, { title });
-    else remember.softDelete(id);
+    if (!title) remember.softDelete(id);
+    else if (title !== rememberItems[id]?.title) remember.update(id, { title });
     setEditingId(null);
   }
 
-  /** Escape: discard whatever was typed instead of leaving the row stuck in
-   * edit mode (see commit() — it's the only path that clears editingId, and
-   * a blur triggered by Escape doesn't reliably fire onEndEditing on web). */
+  /** Escape: discard whatever was typed instead of saving it. */
   function cancelEdit(id: string, hadTitle: boolean) {
     if (!hadTitle) remember.softDelete(id);
     setEditingId(null);
@@ -87,20 +87,10 @@ export function RememberSection() {
                   <GlossyCard color={item.color} size="remember">
                     <View style={styles.row}>
                       {activeEditId === item.id ? (
-                        <TextInput
-                          defaultValue={item.title}
-                          onSubmitEditing={(event) => commit(item.id, event.nativeEvent.text)}
-                          onEndEditing={(event) => commit(item.id, event.nativeEvent.text)}
-                          onKeyPress={(event) => {
-                            if (event.nativeEvent.key === "Escape") {
-                              cancelEdit(item.id, !!item.title.trim());
-                            }
-                          }}
-                          returnKeyType="done"
-                          placeholder="One line to remember"
-                          placeholderTextColor={palette[item.color].ink}
-                          style={[styles.input, { color: palette[item.color].ink }]}
-                          autoFocus
+                        <RememberInput
+                          item={item}
+                          onCommit={(text) => commit(item.id, text)}
+                          onCancel={() => cancelEdit(item.id, !!item.title.trim())}
                         />
                       ) : (
                         <Touchable
@@ -152,6 +142,63 @@ export function RememberSection() {
         />
       ) : null}
     </View>
+  );
+}
+
+type RememberInputProps = {
+  item: RememberItem;
+  onCommit: (text: string) => void;
+  onCancel: () => void;
+};
+
+/**
+ * The inline editor. It saves on Enter *and* on blur — tapping outside the
+ * iPhone keyboard only blurs, and react-native-web never fires onEndEditing,
+ * so blur is the one event every platform delivers. Each edit settles once:
+ * Enter is followed by a blur, and Escape must not be undone by its blur.
+ */
+function RememberInput({ item, onCommit, onCancel }: RememberInputProps) {
+  const ref = useRef<TextInput>(null);
+  const settled = useRef(false);
+  // Native blur events carry no text, so track it as it is typed.
+  const text = useRef(item.title);
+  const ink = palette[item.color].ink;
+
+  useEffect(() => {
+    ref.current?.focus();
+    // The keyboard was raised by a stand-in during the tap; focus is ours now.
+    releaseKeyboard();
+  }, []);
+
+  function settle(action: () => void) {
+    if (settled.current) return;
+    settled.current = true;
+    action();
+  }
+
+  return (
+    <TextInput
+      ref={ref}
+      defaultValue={item.title}
+      onChangeText={(next) => {
+        text.current = next;
+      }}
+      onSubmitEditing={(event) => settle(() => onCommit(event.nativeEvent.text))}
+      onBlur={() => {
+        // Switching to another window blurs too; the edit is still open when
+        // the user comes back, so that is not a "tap outside".
+        if (Platform.OS === "web" && !document.hasFocus()) return;
+        settle(() => onCommit(text.current));
+      }}
+      onKeyPress={(event) => {
+        if (event.nativeEvent.key === "Escape") settle(onCancel);
+      }}
+      returnKeyType="done"
+      placeholder="One line to remember"
+      placeholderTextColor={ink}
+      style={[styles.input, { color: ink }]}
+      autoFocus
+    />
   );
 }
 
