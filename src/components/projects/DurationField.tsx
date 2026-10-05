@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { PopIn } from "@/components/ui/PopIn";
-import { ScrollWheel } from "@/components/ui/ScrollWheel";
+import { ScrollWheel, WHEEL_HEIGHT, WheelSelectionBand } from "@/components/ui/ScrollWheel";
 import { Touchable } from "@/components/ui/Touchable";
 import { formatDuration } from "@/domain/duration";
 import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
@@ -69,6 +69,7 @@ export function DurationField({ minutes, onChange }: DurationFieldProps) {
           <PopIn style={styles.card}>
             <Text style={styles.title}>Estimated time</Text>
             <View style={styles.wheels}>
+              <WheelSelectionBand />
               <View style={styles.column}>
                 <ScrollWheel
                   key={`h-${open}`}
@@ -76,6 +77,8 @@ export function DurationField({ minutes, onChange }: DurationFieldProps) {
                   value={String(h)}
                   onChange={(next) => setH(Number(next))}
                   accessibilityLabel="Hours"
+                  loop
+                  band={false}
                 />
                 <Text style={styles.unit}>h</Text>
               </View>
@@ -86,6 +89,8 @@ export function DurationField({ minutes, onChange }: DurationFieldProps) {
                   value={String(m).padStart(2, "0")}
                   onChange={(next) => setM(Number(next))}
                   accessibilityLabel="Minutes"
+                  loop
+                  band={false}
                 />
                 <Text style={styles.unit}>min</Text>
               </View>
@@ -142,7 +147,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   wheels: {
-    height: 90,
+    height: WHEEL_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

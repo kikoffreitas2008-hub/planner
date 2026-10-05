@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { ScrollWheel } from "@/components/ui/ScrollWheel";
+import { ScrollWheel, WHEEL_HEIGHT, WheelSelectionBand } from "@/components/ui/ScrollWheel";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
 
 const HOURS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0"));
@@ -53,12 +53,16 @@ export function TimeRangeWheels({ start, end, onChangeStart, onChangeEnd }: Time
       </View>
 
       <View style={styles.wheels}>
+        {/* One band across both wheels, as on iOS. */}
+        <WheelSelectionBand />
         <ScrollWheel
           key={`hour-${field}`}
           values={HOURS}
           value={hour}
           onChange={setHour}
           accessibilityLabel="Hour"
+          loop
+          band={false}
         />
         <Text style={styles.colon}>:</Text>
         <ScrollWheel
@@ -67,6 +71,8 @@ export function TimeRangeWheels({ start, end, onChangeStart, onChangeEnd }: Time
           value={minute}
           onChange={setMinute}
           accessibilityLabel="Minute"
+          loop
+          band={false}
         />
       </View>
     </View>
@@ -100,7 +106,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   wheels: {
-    height: 90,
+    height: WHEEL_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
