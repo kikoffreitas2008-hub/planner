@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 
+import { ProgressBar } from "@/components/projects/ProgressBar";
+import { useProgressVisible } from "@/components/projects/ProgressToggle";
 import { GlossyCard } from "@/components/ui/GlossyCard";
 import { Touchable } from "@/components/ui/Touchable";
+import { useTaskProgress } from "@/data/projects";
 import { projectItems } from "@/data/repositories";
 import type { Project, ProjectItem } from "@/domain/entities";
 import { fitTitleSize, MIN_TITLE_SIZE } from "@/domain/fitText";
@@ -11,6 +14,8 @@ import { colors, layoutTokens, palette, radius, spacing, typography } from "@/th
 const GAP = spacing.md;
 const TARGET_CARD = 150;
 const TITLE_LINES = 4;
+/** The progress bar takes the room of one line of the name. */
+const TITLE_LINES_WITH_PROGRESS = 3;
 /** Centred text may run this far into the card's padding on each side. */
 const TITLE_BLEED = spacing.xs;
 
@@ -27,6 +32,7 @@ export type StructuredTaskGridProps = {
 export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTaskGridProps) {
   const { width } = useWindowDimensions();
   const [draft, setDraft] = useState("");
+  const showProgress = useProgressVisible();
 
   const containerWidth = Math.min(
     width - layoutTokens.horizontalPadding * 2,
@@ -49,46 +55,17 @@ export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTas
         <Text style={styles.empty}>No tasks yet.</Text>
       ) : (
         <View style={styles.grid}>
-          {tasks.map((task) => {
-            const done = Boolean(task.completed_at);
-            const color = task.color ?? project.color;
-            const ink = palette[color].ink;
-            // Size the name to the card so no word is broken across lines.
-            const fitted = fitTitleSize({
-              title: task.title,
-              width: lineWidth,
-              maxSize: typography.heading.fontSize,
-              minSize: MIN_TITLE_SIZE,
-              maxLines: TITLE_LINES,
-              lineHeightRatio: typography.heading.lineHeight / typography.heading.fontSize,
-            });
-            return (
-              <Touchable
-                key={task.id}
-                variant="card"
-                onPress={() => onOpenTask(task.id)}
-                accessibilityLabel={task.title}
-                style={done ? styles.done : undefined}
-              >
-                <GlossyCard color={color} style={{ width: size, height: size }}>
-                  <View style={styles.taskBody}>
-                    {/* The card carries the name alone; the subtask count only
-                        matters once the task is open (owner's call). */}
-                    {/* Width on a View: a numberOfLines Text on web is capped at
-                        its parent's width, which would cancel the bleed. */}
-                    <View style={{ width: lineWidth }}>
-                      <Text
-                        style={[styles.taskTitle, fitted, { color: ink }]}
-                        numberOfLines={TITLE_LINES}
-                      >
-                        {task.title}
-                      </Text>
-                    </View>
-                  </View>
-                </GlossyCard>
-              </Touchable>
-            );
-          })}
+          {tasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              project={project}
+              task={task}
+              size={size}
+              lineWidth={lineWidth}
+              showProgress={showProgress}
+              onPress={() => onOpenTask(task.id)}
+            />
+          ))}
         </View>
       )}
 
@@ -113,6 +90,63 @@ export function StructuredTaskGrid({ project, tasks, onOpenTask }: StructuredTas
   );
 }
 
+function TaskCard({
+  project,
+  task,
+  size,
+  lineWidth,
+  showProgress,
+  onPress,
+}: {
+  project: Project;
+  task: ProjectItem;
+  size: number;
+  lineWidth: number;
+  showProgress: boolean;
+  onPress: () => void;
+}) {
+  const progress = useTaskProgress(project, task.id);
+  const done = Boolean(task.completed_at);
+  const color = task.color ?? project.color;
+  const ink = palette[color].ink;
+  // Size the name to the card so no word is broken across lines.
+  const fitted = fitTitleSize({
+    title: task.title,
+    width: lineWidth,
+    maxSize: typography.heading.fontSize,
+    minSize: MIN_TITLE_SIZE,
+    maxLines: showProgress ? TITLE_LINES_WITH_PROGRESS : TITLE_LINES,
+    lineHeightRatio: typography.heading.lineHeight / typography.heading.fontSize,
+  });
+
+  return (
+    <Touchable
+      variant="card"
+      onPress={onPress}
+      accessibilityLabel={task.title}
+      style={done ? styles.done : undefined}
+    >
+      <GlossyCard color={color} style={{ width: size, height: size }}>
+        <View style={[styles.taskBody, showProgress && styles.taskBodyWithProgress]}>
+          {/* Width on a View: a numberOfLines Text on web is capped at its
+              parent's width, which would cancel the bleed. */}
+          <View style={[{ width: lineWidth }, showProgress && styles.titleArea]}>
+            <Text
+              style={[styles.taskTitle, fitted, { color: ink }]}
+              numberOfLines={showProgress ? TITLE_LINES_WITH_PROGRESS : TITLE_LINES}
+            >
+              {task.title}
+            </Text>
+          </View>
+          {showProgress ? (
+            <ProgressBar progress={progress} mode={project.progress_mode} tone="ink" inkColor={ink} />
+          ) : null}
+        </View>
+      </GlossyCard>
+    </Touchable>
+  );
+}
+
 const styles = StyleSheet.create({
   wrap: {
     gap: spacing.lg,
@@ -134,6 +168,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  taskBodyWithProgress: {
+    gap: spacing.xs,
+  },
+  titleArea: {
+    flex: 1,
+    justifyContent: "center",
   },
   taskTitle: {
     ...typography.heading,

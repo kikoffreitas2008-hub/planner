@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
+import { ProgressToggle } from "@/components/projects/ProgressToggle";
 import { ProjectItemList } from "@/components/projects/ProjectItemList";
 import { ProjectSettingsSheet } from "@/components/projects/ProjectSettingsSheet";
 import { StructuredTaskGrid } from "@/components/projects/StructuredTaskGrid";
@@ -42,12 +43,15 @@ export default function ProjectDetailScreen() {
         title={project.title}
         subtitle={progressLabel}
         right={
-          <RoundIconButton
-            sf="ellipsis"
-            ion="ellipsis-horizontal"
-            accessibilityLabel="Project settings"
-            onPress={() => setSettingsOpen(true)}
-          />
+          <>
+            {project.mode === "structured" ? <ProgressToggle /> : null}
+            <RoundIconButton
+              sf="ellipsis"
+              ion="ellipsis-horizontal"
+              accessibilityLabel="Project settings"
+              onPress={() => setSettingsOpen(true)}
+            />
+          </>
         }
       />
 

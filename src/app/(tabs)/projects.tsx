@@ -1,25 +1,20 @@
 import { useState } from "react";
-import { StyleSheet, Text } from "react-native";
 import { useRouter } from "expo-router";
 
 import { ArchivedProjectsSheet } from "@/components/projects/ArchivedProjectsSheet";
 import { ProjectCreateSheet } from "@/components/projects/ProjectCreateSheet";
 import { ProjectGrid } from "@/components/projects/ProjectGrid";
+import { ProgressToggle, useProgressVisible } from "@/components/projects/ProgressToggle";
 import { GlobalSearchButton } from "@/components/search/GlobalSearchButton";
 import { AppScreen } from "@/components/ui/AppScreen";
 import { RoundIconButton } from "@/components/ui/RoundIconButton";
-import { Touchable } from "@/components/ui/Touchable";
 import { useActiveProjects, useArchivedProjects } from "@/data/projects";
-import { settings } from "@/data/repositories";
-import { useUserSettings } from "@/data/store";
-import { colors, radius, spacing, typography } from "@/theme/tokens";
 
 export default function ProjectsScreen() {
   const router = useRouter();
   const active = useActiveProjects();
   const archived = useArchivedProjects();
-  const userSettings = useUserSettings();
-  const showProgress = userSettings?.project_progress_visible ?? true;
+  const showProgress = useProgressVisible();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [archivedOpen, setArchivedOpen] = useState(false);
@@ -29,14 +24,7 @@ export default function ProjectsScreen() {
       title="Projects"
       headerRight={
         <>
-          <Touchable
-            onPress={() => settings.update({ project_progress_visible: !showProgress })}
-            haptic="selection"
-            accessibilityState={{ selected: showProgress }}
-            style={[styles.toggle, showProgress && styles.toggleOn]}
-          >
-            <Text style={[styles.toggleText, showProgress && styles.toggleTextOn]}>Progress</Text>
-          </Touchable>
+          <ProgressToggle />
           <GlobalSearchButton />
           <RoundIconButton
             sf="plus"
@@ -76,22 +64,3 @@ export default function ProjectsScreen() {
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  toggle: {
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
-    backgroundColor: colors.mutedSurface,
-  },
-  toggleOn: {
-    backgroundColor: colors.text,
-  },
-  toggleText: {
-    ...typography.button,
-    color: colors.text,
-  },
-  toggleTextOn: {
-    color: colors.surface,
-  },
-});

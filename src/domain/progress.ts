@@ -61,3 +61,16 @@ export function calculateProjectProgress(
     omittedEstimateCount: eligible.length - estimated.length,
   };
 }
+
+/**
+ * Progress of one structured task: its subtasks, or the task itself while it
+ * has none — the same leaf rule the project total uses.
+ */
+export function calculateTaskProgress(
+  items: readonly ProjectItem[],
+  taskId: string,
+  progressMode: Project["progress_mode"],
+): ProjectProgress {
+  const own = items.filter((item) => item.id === taskId || item.parent_id === taskId);
+  return calculateProjectProgress(own, "structured", progressMode);
+}

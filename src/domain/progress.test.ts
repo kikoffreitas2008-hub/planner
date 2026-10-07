@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import type { ProjectItem } from "./entities.ts";
-import { calculateProjectProgress, eligibleProgressItems } from "./progress.ts";
+import { calculateProjectProgress, calculateTaskProgress, eligibleProgressItems } from "./progress.ts";
 
 function pItem(overrides: Partial<ProjectItem>): ProjectItem {
   return {
@@ -63,4 +63,21 @@ test("in a structured project only leaf subtasks and childless tasks count", () 
   const eligible = eligibleProgressItems(items, "structured").map((entry) => entry.id).sort();
   assert.deepEqual(eligible, ["child-a", "child-b", "lonely"]);
   assert.equal(calculateProjectProgress(items, "structured", "items").total, 3);
+});
+
+test("task progress counts the task's subtasks, or the task itself when it has none", () => {
+  const items = [
+    pItem({ id: "task", estimated_minutes: 30 }),
+    pItem({ id: "sub-a", parent_id: "task", completed_at: "2026-09-02T00:00:00.000Z", estimated_minutes: 20 }),
+    pItem({ id: "sub-b", parent_id: "task", estimated_minutes: 40 }),
+    pItem({ id: "other", parent_id: "elsewhere", completed_at: "2026-09-02T00:00:00.000Z" }),
+    pItem({ id: "leaf", completed_at: "2026-09-02T00:00:00.000Z" }),
+  ];
+  assert.deepEqual(
+    [calculateTaskProgress(items, "task", "items").completed, calculateTaskProgress(items, "task", "items").total],
+    [1, 2],
+  );
+  assert.equal(calculateTaskProgress(items, "task", "time").completed, 20);
+  assert.equal(calculateTaskProgress(items, "task", "time").total, 60);
+  assert.equal(calculateTaskProgress(items, "leaf", "items").ratio, 1);
 });

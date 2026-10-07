@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 
 import { useTable } from "@/data/store";
-import { calculateProjectProgress, type ProjectProgress } from "@/domain/progress";
+import {
+  calculateProjectProgress,
+  calculateTaskProgress,
+  type ProjectProgress,
+} from "@/domain/progress";
 import { orderProjectItems } from "@/domain/projectOrder";
 import type { Project, ProjectItem } from "@/domain/entities";
 
@@ -98,6 +102,15 @@ export function useProjectProgress(project: Project | null): ProjectProgress {
     }
     return calculateProjectProgress(items, project.mode, project.progress_mode);
   }, [items, project]);
+}
+
+/** Progress of one structured task, by its project's progress mode. */
+export function useTaskProgress(project: Project, taskId: string): ProjectProgress {
+  const items = useAllProjectItems(project.id);
+  return useMemo(
+    () => calculateTaskProgress(items, taskId, project.progress_mode),
+    [items, taskId, project.progress_mode],
+  );
 }
 
 /** Children of a structured task (its subtasks). */

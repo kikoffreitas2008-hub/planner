@@ -115,11 +115,11 @@ export default function TodayScreen() {
 
       <Divider />
 
-      <RoutineCard addSignal={routineAddSignal} />
+      <RememberSection />
 
       <Divider />
 
-      <RememberSection />
+      <RoutineCard addSignal={routineAddSignal} />
 
       {form ? (
         <AgendaFormModal
