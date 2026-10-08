@@ -20,6 +20,7 @@ declare
     'routine_lists',
     'routine_items',
     'remember_items',
+    'time_logs',
     'sync_tombstones'
   ];
 begin
@@ -41,6 +42,7 @@ declare
     'routine_lists',
     'routine_items',
     'remember_items',
+    'time_logs',
     'sync_tombstones'
   ];
 begin
@@ -80,7 +82,7 @@ begin
   foreach t in array array[
     'user_settings','projects','project_items','calendar_items',
     'recurrence_exceptions','routine_lists','routine_items',
-    'remember_items','sync_tombstones'
+    'remember_items','time_logs','sync_tombstones'
   ] loop
     begin
       execute format('alter publication supabase_realtime add table public.%1$I;', t);

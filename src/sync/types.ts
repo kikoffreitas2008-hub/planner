@@ -7,6 +7,7 @@ export type SyncTableName =
   | "remember_items"
   | "recurrence_exceptions"
   | "user_settings"
+  | "time_logs"
   | "sync_tombstones";
 
 export const SYNC_TABLES: readonly SyncTableName[] = [
@@ -18,6 +19,7 @@ export const SYNC_TABLES: readonly SyncTableName[] = [
   "routine_lists",
   "routine_items",
   "remember_items",
+  "time_logs",
   "sync_tombstones",
 ];
 

@@ -213,6 +213,7 @@ const ALL_TABLES: Table[] = [
   "routine_items",
   "remember_items",
   "recurrence_exceptions",
+  "time_logs",
   "sync_tombstones",
 ];
 

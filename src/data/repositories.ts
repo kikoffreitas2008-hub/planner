@@ -11,6 +11,7 @@ import type {
   RememberItem,
   RoutineItem,
   RoutineList,
+  TimeLog,
   UserSettings,
 } from "@/domain/entities";
 
@@ -230,6 +231,36 @@ export const remember = {
       touch("remember_items", id, { manual_sort_key: key });
       previous = key;
     }
+  },
+};
+
+// --- time logs ----------------------------------------------------------
+
+export const timeLogs = {
+  /** Set one day's minutes; creates the day's row the first time. */
+  save(
+    date: ISODate,
+    values: Partial<Pick<TimeLog, "university_minutes" | "extras_minutes">>,
+  ): void {
+    const existing = Object.values(getDatabase().time_logs)
+      .filter((row) => row.date === date && !row.deleted_at)
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0];
+    if (existing) {
+      touch("time_logs", existing.id, values);
+      return;
+    }
+    const timestamp = nowISO();
+    upsertRow("time_logs", {
+      id: createClientId(),
+      user_id: localUserId(),
+      created_at: timestamp,
+      updated_at: timestamp,
+      deleted_at: null,
+      date,
+      university_minutes: 0,
+      extras_minutes: 0,
+      ...values,
+    });
   },
 };
 

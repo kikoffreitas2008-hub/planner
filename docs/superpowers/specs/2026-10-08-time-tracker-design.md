@@ -39,9 +39,9 @@ interface TimeLog extends SyncEntity {
 }
 ```
 
-- The row id is derived deterministically from the date (a UUID-shaped hash of
-  `time-log:<date>`), so answering the same day on two devices converges on one
-  row under the existing last-write-wins rule instead of creating duplicates.
+- Rows get ordinary client ids. Reads keep only the latest row per date
+  (`latestByDate`), and `timeLogs.save` updates the day's existing row, so a day
+  answered twice — even on two devices — counts once.
 - Added to the local store's tables, the sync engine's table list, and
   `supabase/schema.sql`.
 - New additive script `supabase/migrations/2026-10-08-time-logs.sql` creates
