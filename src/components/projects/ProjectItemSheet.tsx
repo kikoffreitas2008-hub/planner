@@ -17,6 +17,7 @@ import {
   importanceColor,
   importanceLabel,
 } from "@/components/projects/ImportancePicker";
+import { CompleteButton } from "@/components/ui/CompleteButton";
 import { DatePickerCalendar } from "@/components/ui/DatePickerCalendar";
 import { PickerField } from "@/components/ui/PickerField";
 import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
@@ -32,9 +33,11 @@ import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
 export type ProjectItemSheetProps = {
   item: ProjectItem;
   onClose: () => void;
+  /** Flip the item's done state and close. */
+  onToggleComplete: () => void;
 };
 
-export function ProjectItemSheet({ item, onClose }: ProjectItemSheetProps) {
+export function ProjectItemSheet({ item, onClose, onToggleComplete }: ProjectItemSheetProps) {
   const [title, setTitle] = useState(item.title);
   const [notes, setNotes] = useState(item.notes ?? "");
   const [importance, setImportance] = useState<ProjectItem["importance"]>(item.importance);
@@ -213,6 +216,7 @@ export function ProjectItemSheet({ item, onClose }: ProjectItemSheetProps) {
             <Touchable onPress={save} haptic="success" style={styles.saveButton}>
               <Text style={styles.saveText}>Save</Text>
             </Touchable>
+            <CompleteButton done={Boolean(item.completed_at)} onPress={onToggleComplete} />
             <Touchable onPress={remove} haptic="warning" style={styles.deleteButton}>
               <Text style={styles.deleteText}>Delete item</Text>
             </Touchable>

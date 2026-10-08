@@ -12,7 +12,7 @@ import { Divider } from "@/components/ui/Divider";
 import { PlusMenu } from "@/components/ui/PlusMenu";
 import { QuoteCard } from "@/components/ui/QuoteCard";
 import { RoundIconButton } from "@/components/ui/RoundIconButton";
-import { applyFormEdit, createFromForm, deleteAgendaItem } from "@/data/agendaEdit";
+import { applyFormEdit, createFromForm, deleteAgendaItem, toggleAgendaComplete } from "@/data/agendaEdit";
 import quotesData from "@/data/bible-quotes.en-US.json";
 import { useOverdueCandidates } from "@/data/overdue";
 import { remember } from "@/data/repositories";
@@ -44,6 +44,11 @@ export default function TodayScreen() {
   function handleSubmit(result: AgendaFormResult, scope?: RecurrenceScope) {
     if (form?.mode === "edit") applyFormEdit(form.item, result, scope);
     else createFromForm(result);
+    setForm(null);
+  }
+
+  function handleToggleComplete() {
+    if (form?.mode === "edit") toggleAgendaComplete(form.item);
     setForm(null);
   }
 
@@ -129,6 +134,7 @@ export default function TodayScreen() {
           onCancel={() => setForm(null)}
           onSubmit={handleSubmit}
           onDelete={handleDelete}
+          onToggleComplete={handleToggleComplete}
         />
       ) : null}
 

@@ -184,7 +184,14 @@ export function ProjectItemList({ project, parentId, items, onOpenItem }: Projec
       ) : null}
 
       {sheetItem ? (
-        <ProjectItemSheet item={sheetItem} onClose={() => setSheetItem(null)} />
+        <ProjectItemSheet
+          item={sheetItem}
+          onClose={() => setSheetItem(null)}
+          onToggleComplete={() => {
+            toggleComplete(sheetItem);
+            setSheetItem(null);
+          }}
+        />
       ) : null}
     </View>
   );

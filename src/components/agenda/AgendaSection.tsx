@@ -9,6 +9,7 @@ import { TimeEditModal } from "@/components/agenda/TimeEditModal";
 import { DraggableColumn } from "@/components/projects/DraggableColumn";
 import { Touchable } from "@/components/ui/Touchable";
 import { useDayAgenda } from "@/data/agenda";
+import { toggleAgendaComplete } from "@/data/agendaEdit";
 import { calendarItems, projectItems, settings } from "@/data/repositories";
 import { getDatabase, useUserSettings } from "@/data/store";
 import { offerUndo } from "@/data/undoBar";
@@ -43,12 +44,6 @@ export function AgendaSection({
       return false;
     }
   }, [manualDatesJson, date]);
-
-  function toggleComplete(item: AgendaItem) {
-    const done = !item.completedAt;
-    if (item.origin.kind === "calendar") calendarItems.setCompleted(item.origin.id, done);
-    else projectItems.setCompleted(item.origin.id, done);
-  }
 
   function remove(item: AgendaItem) {
     if (item.origin.kind === "calendar") {
@@ -144,14 +139,14 @@ export function AgendaSection({
             <View style={styles.rowSpacing}>
               <SwipeableRow
                 enabled={!editMode}
-                onSwipeRight={() => toggleComplete(item)}
+                onSwipeRight={() => toggleAgendaComplete(item)}
                 onSwipeLeft={() => remove(item)}
                 rightLabel={item.completedAt ? "Re-open" : "Complete"}
               >
                 <AgendaItemCard
                   item={item}
                   editMode={editMode}
-                  onToggleComplete={() => toggleComplete(item)}
+                  onToggleComplete={() => toggleAgendaComplete(item)}
                   onDelete={() => remove(item)}
                   onEdit={() => {
                     if (!swipedRecently()) onEditItem(item);

@@ -148,3 +148,21 @@ test("the domain expands a weekly rule across a whole month", () => {
   assert.equal(hits.length, 4);
   assert.equal(occursOn(source, "2026-09-08").length, 0);
 });
+
+test("marking a past occurrence done from the agenda completes that day only", async () => {
+  const { snapshotRangeAgenda } = await import("./agenda.ts");
+  const { toggleAgendaComplete } = await import("./agendaEdit.ts");
+  const source = weeklyEvent();
+
+  const [past] = snapshotRangeAgenda("2026-09-14", "2026-09-14");
+  assert.ok(past, "the occurrence is on the agenda");
+  toggleAgendaComplete(past);
+
+  assert.ok(occursOn(source, "2026-09-14")[0]?.completedAt, "that day is done");
+  assert.equal(occursOn(source, "2026-09-21")[0]?.completedAt, null, "the next week is not");
+  assert.equal(getDatabase().calendar_items[source.id]?.completed_at, null, "the series is not");
+
+  const [done] = snapshotRangeAgenda("2026-09-14", "2026-09-14");
+  toggleAgendaComplete(done);
+  assert.equal(occursOn(source, "2026-09-14")[0]?.completedAt, null, "and it can be undone");
+});

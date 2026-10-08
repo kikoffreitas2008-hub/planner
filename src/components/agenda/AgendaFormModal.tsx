@@ -5,6 +5,7 @@ import { NotificationField } from "@/components/agenda/NotificationField";
 import { RecurrenceField } from "@/components/agenda/RecurrenceField";
 import { RecurrenceScopeDialog } from "@/components/agenda/RecurrenceScopeDialog";
 import { ColorDot } from "@/components/ui/ColorDot";
+import { CompleteButton } from "@/components/ui/CompleteButton";
 import { DatePickerCalendar } from "@/components/ui/DatePickerCalendar";
 import { PickerField } from "@/components/ui/PickerField";
 import { TimeRangeWheels } from "@/components/ui/TimeRangeWheels";
@@ -41,6 +42,8 @@ export type AgendaFormModalProps = {
   onCancel: () => void;
   onSubmit: (result: AgendaFormResult, scope?: RecurrenceScope) => void;
   onDelete?: (scope?: RecurrenceScope) => void;
+  /** Flip the edited item's done state (one occurrence of a series) and close. */
+  onToggleComplete?: () => void;
 };
 
 function clockFromISO(iso: string | null): string {
@@ -54,6 +57,7 @@ export function AgendaFormModal({
   onCancel,
   onSubmit,
   onDelete,
+  onToggleComplete,
 }: AgendaFormModalProps) {
   const editing = initial.mode === "edit" ? initial.item : null;
   const isSeries = Boolean(editing?.recurrenceRule);
@@ -285,6 +289,10 @@ export function AgendaFormModal({
             <Touchable onPress={submit} haptic="success" style={styles.saveButton}>
               <Text style={styles.saveText}>Save</Text>
             </Touchable>
+
+            {editing && onToggleComplete ? (
+              <CompleteButton done={Boolean(editing.completedAt)} onPress={onToggleComplete} />
+            ) : null}
 
             {editing && onDelete ? (
               <Touchable onPress={requestDelete} haptic="warning" style={styles.deleteButton}>

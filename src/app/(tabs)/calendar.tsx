@@ -14,7 +14,7 @@ import { PlusMenu } from "@/components/ui/PlusMenu";
 import { Touchable } from "@/components/ui/Touchable";
 import { ViewSwitcher } from "@/components/ui/ViewSwitcher";
 import { useDayAgenda, useRangeAgenda } from "@/data/agenda";
-import { applyFormEdit, createFromForm, deleteAgendaItem } from "@/data/agendaEdit";
+import { applyFormEdit, createFromForm, deleteAgendaItem, toggleAgendaComplete } from "@/data/agendaEdit";
 import { useUserSettings } from "@/data/store";
 import type { AgendaItem } from "@/domain/agenda";
 import {
@@ -88,6 +88,11 @@ export default function CalendarScreen() {
     else createFromForm(result);
     setForm(null);
   }
+  function handleToggleComplete() {
+    if (form?.mode === "edit") toggleAgendaComplete(form.item);
+    setForm(null);
+  }
+
   function handleDelete(scope?: RecurrenceScope) {
     if (form?.mode === "edit") deleteAgendaItem(form.item, scope);
     setForm(null);
@@ -215,6 +220,7 @@ export default function CalendarScreen() {
           onCancel={() => setForm(null)}
           onSubmit={handleSubmit}
           onDelete={handleDelete}
+          onToggleComplete={handleToggleComplete}
         />
       ) : null}
     </AppScreen>
