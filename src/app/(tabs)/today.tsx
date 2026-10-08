@@ -5,6 +5,7 @@ import { AgendaSection } from "@/components/agenda/AgendaSection";
 import { OverdueReviewSheet } from "@/components/agenda/OverdueReviewSheet";
 import { RememberSection } from "@/components/remember/RememberSection";
 import { RoutineCard } from "@/components/routine/RoutineCard";
+import { TimeLogSheet } from "@/components/time/TimeLogSheet";
 import { GlobalSearchButton } from "@/components/search/GlobalSearchButton";
 import { SettingsSheet } from "@/components/settings/SettingsSheet";
 import { AppScreen } from "@/components/ui/AppScreen";
@@ -16,6 +17,7 @@ import { applyFormEdit, createFromForm, deleteAgendaItem, toggleAgendaComplete }
 import quotesData from "@/data/bible-quotes.en-US.json";
 import { useOverdueCandidates } from "@/data/overdue";
 import { remember } from "@/data/repositories";
+import { useUnansweredDays } from "@/data/timeLogs";
 import type { AgendaItem } from "@/domain/agenda";
 import { quoteForLocalDate, type BibleQuote } from "@/domain/dailyQuote";
 import type { RecurrenceScope } from "@/domain/recurrenceMutation";
@@ -36,9 +38,11 @@ export default function TodayScreen() {
   const [routineAddSignal, setRoutineAddSignal] = useState(0);
   const [overdueDismissed, setOverdueDismissed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [timeLogDismissed, setTimeLogDismissed] = useState(false);
 
   const quote = useMemo(() => quoteForLocalDate(realToday, QUOTES), [realToday]);
   const overdue = useOverdueCandidates(realToday);
+  const unanswered = useUnansweredDays(realToday);
   const isPlanningTomorrow = viewDate !== realToday;
 
   function handleSubmit(result: AgendaFormResult, scope?: RecurrenceScope) {
@@ -144,6 +148,13 @@ export default function TodayScreen() {
           today={realToday}
           onDone={() => setOverdueDismissed(true)}
         />
+      ) : null}
+
+      {/* After the overdue review, never on top of it. */}
+      {unanswered.length > 0 &&
+      !timeLogDismissed &&
+      (overdue.length === 0 || overdueDismissed) ? (
+        <TimeLogSheet days={unanswered} onClose={() => setTimeLogDismissed(true)} />
       ) : null}
 
       {settingsOpen ? <SettingsSheet onClose={() => setSettingsOpen(false)} /> : null}
