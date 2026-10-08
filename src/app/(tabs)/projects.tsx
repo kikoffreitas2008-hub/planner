@@ -5,8 +5,10 @@ import { ArchivedProjectsSheet } from "@/components/projects/ArchivedProjectsShe
 import { ProjectCreateSheet } from "@/components/projects/ProjectCreateSheet";
 import { ProjectGrid } from "@/components/projects/ProjectGrid";
 import { ProgressToggle, useProgressVisible } from "@/components/projects/ProgressToggle";
+import { TimeTrackerSection } from "@/components/time/TimeTrackerSection";
 import { GlobalSearchButton } from "@/components/search/GlobalSearchButton";
 import { AppScreen } from "@/components/ui/AppScreen";
+import { Divider } from "@/components/ui/Divider";
 import { RoundIconButton } from "@/components/ui/RoundIconButton";
 import { useActiveProjects, useArchivedProjects } from "@/data/projects";
 
@@ -42,6 +44,10 @@ export default function ProjectsScreen() {
         onOpenProject={(id) => router.push({ pathname: "/project/[id]", params: { id } })}
         onOpenArchived={() => setArchivedOpen(true)}
       />
+
+      <Divider />
+
+      <TimeTrackerSection />
 
       <ProjectCreateSheet
         visible={createOpen}
