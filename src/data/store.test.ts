@@ -18,7 +18,7 @@ class MemoryStorage {
 
 const { loadDatabase, saveDatabase, clearDatabase } = await import("./persistence.ts");
 const { getDatabase, resetDatabaseForTests, replaceDatabase } = await import("./store.ts");
-const { calendarItems, routine, remember, settings } = await import("./repositories.ts");
+const { calendarItems, routine, remember, settings, timeLogs } = await import("./repositories.ts");
 const { createEmptyDatabase } = await import("./db.ts");
 
 beforeEach(() => {
@@ -139,4 +139,13 @@ test("remember.applyOrder rewrites items into the given order", () => {
   remember.applyOrder([c.id, a.id, b.id]);
   const key = (id: string) => getDatabase().remember_items[id].manual_sort_key;
   assert.ok(key(c.id) < key(a.id) && key(a.id) < key(b.id));
+});
+
+test("saving the same day twice keeps one row with the latest values", () => {
+  timeLogs.save("2026-10-09", { university_minutes: 30, extras_minutes: 0 });
+  timeLogs.save("2026-10-09", { university_minutes: 150 });
+  const rows = Object.values(getDatabase().time_logs).filter((row) => row.date === "2026-10-09");
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].university_minutes, 150);
+  assert.equal(rows[0].extras_minutes, 0, "the other area is untouched");
 });

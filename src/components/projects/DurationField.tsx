@@ -10,6 +10,10 @@ import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
 export type DurationFieldProps = {
   minutes: number | null;
   onChange: (minutes: number | null) => void;
+  /** Heading of the picker pop-up. */
+  title?: string;
+  /** What the value is, for screen readers (lower case). */
+  label?: string;
 };
 
 const HOURS = Array.from({ length: 24 }, (_, index) => String(index));
@@ -21,7 +25,12 @@ const MINUTES = Array.from({ length: 60 }, (_, index) => String(index).padStart(
  * field, the value is committed the moment "Done" is tapped — so it is
  * already in place when the surrounding sheet is saved.
  */
-export function DurationField({ minutes, onChange }: DurationFieldProps) {
+export function DurationField({
+  minutes,
+  onChange,
+  title = "Estimated time",
+  label = "estimated time",
+}: DurationFieldProps) {
   const [open, setOpen] = useState(false);
   const [h, setH] = useState(0);
   const [m, setM] = useState(0);
@@ -50,7 +59,9 @@ export function DurationField({ minutes, onChange }: DurationFieldProps) {
         variant="row"
         onPress={openPicker}
         accessibilityLabel={
-          minutes === null ? "Set estimated time" : `Estimated time: ${formatDuration(minutes)}`
+          minutes === null
+            ? `Set ${label}`
+            : `${label[0].toUpperCase()}${label.slice(1)}: ${formatDuration(minutes)}`
         }
         style={styles.button}
       >
@@ -67,7 +78,7 @@ export function DurationField({ minutes, onChange }: DurationFieldProps) {
             onPress={() => setOpen(false)}
           />
           <PopIn style={styles.card}>
-            <Text style={styles.title}>Estimated time</Text>
+            <Text style={styles.title}>{title}</Text>
             <View style={styles.wheels}>
               <WheelSelectionBand />
               <View style={styles.column}>

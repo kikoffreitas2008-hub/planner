@@ -19,6 +19,19 @@ export function nextDate(date: ISODate): ISODate {
   return value.toISOString().slice(0, 10) as ISODate;
 }
 
+/**
+ * Milliseconds from `now` until the Lisbon date next changes. Lisbon is UTC+0
+ * or UTC+1, so its midnight is 23:00 or 00:00 UTC; take the first that is
+ * already the next day there.
+ */
+export function msUntilNextLisbonMidnight(now: Date = new Date()): number {
+  const next = nextDate(todayInLisbon(now));
+  const utcMidnight = Date.parse(`${next}T00:00:00.000Z`);
+  const summer = utcMidnight - 60 * 60 * 1000;
+  const at = todayInLisbon(new Date(summer)) === next ? summer : utcMidnight;
+  return at - now.getTime();
+}
+
 export function previousDate(date: ISODate): ISODate {
   const value = new Date(`${date}T00:00:00.000Z`);
   value.setUTCDate(value.getUTCDate() - 1);

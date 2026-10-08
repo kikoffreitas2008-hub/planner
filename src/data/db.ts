@@ -7,6 +7,7 @@ import type {
   RoutineItem,
   RoutineList,
   SyncTombstone,
+  TimeLog,
   UserSettings,
 } from "@/domain/entities";
 
@@ -19,6 +20,7 @@ export type Table =
   | "routine_items"
   | "remember_items"
   | "recurrence_exceptions"
+  | "time_logs"
   | "sync_tombstones";
 
 export type Row<T extends Table> = {
@@ -29,6 +31,7 @@ export type Row<T extends Table> = {
   routine_items: RoutineItem;
   remember_items: RememberItem;
   recurrence_exceptions: RecurrenceException;
+  time_logs: TimeLog;
   sync_tombstones: SyncTombstone;
 }[T];
 
@@ -54,6 +57,7 @@ export interface Database {
   routine_items: Record<string, RoutineItem>;
   remember_items: Record<string, RememberItem>;
   recurrence_exceptions: Record<string, RecurrenceException>;
+  time_logs: Record<string, TimeLog>;
   sync_tombstones: Record<string, SyncTombstone>;
 }
 
@@ -68,6 +72,7 @@ export function createEmptyDatabase(): Database {
     routine_items: {},
     remember_items: {},
     recurrence_exceptions: {},
+    time_logs: {},
     sync_tombstones: {},
   };
 }

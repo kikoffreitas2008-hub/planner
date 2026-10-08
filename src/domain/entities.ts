@@ -123,6 +123,13 @@ export interface RememberItem extends SyncEntity {
   manual_sort_key: string;
 }
 
+/** Time given to the tracked areas on one day (the time tracker). */
+export interface TimeLog extends SyncEntity {
+  date: ISODate;
+  university_minutes: number;
+  extras_minutes: number;
+}
+
 interface RecurrenceExceptionBase extends SyncEntity {
   origin_id: EntityId;
   occurrence_date: ISODate;

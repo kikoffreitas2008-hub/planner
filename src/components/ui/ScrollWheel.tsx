@@ -79,26 +79,38 @@ export function ScrollWheel({
 
   const frameRef = useRef<View>(null);
 
-  function emit(step: number) {
-    const next = values[wrapIndex(step, count)];
-    if (next !== undefined && next !== value) onChange(next);
-  }
+  // Latest props for the handlers below. The gestures are built once and the
+  // web listeners are bound once, so they read these instead of closures.
+  const latest = useRef({ values, onChange, reported: value });
+  useEffect(() => {
+    latest.current.values = values;
+    latest.current.onChange = onChange;
+  });
+  useEffect(() => {
+    latest.current.reported = value;
+  }, [value]);
 
-  // Every way of moving the wheel sets `target`; report it as soon as it is
-  // known, before the wheel finishes turning, so "Done" mid-spin still counts.
-  useAnimatedReaction(
-    () => target.value,
-    (step, previous) => {
-      if (previous !== null && step !== previous) runOnJS(emit)(step);
-    },
-    [values, value, onChange],
-  );
+  /**
+   * Report the row the wheel is heading to, the moment it is chosen — before
+   * the wheel finishes turning, so "Done" mid-spin still counts. Called
+   * directly by every input rather than from an animated reaction: on web a
+   * reaction's first run can land seconds after the wheel opens, and a pick
+   * made before then was lost.
+   */
+  function report(step: number) {
+    const { values: rows, onChange: notify, reported } = latest.current;
+    const next = rows[wrapIndex(step, rows.length)];
+    if (next === undefined || next === reported) return;
+    latest.current.reported = next;
+    notify(next);
+  }
 
   /** Move to an absolute (unbounded) row. Callable from JS. */
   function goTo(step: number, duration = 220) {
     const clamped = loop ? step : Math.min(count - 1, Math.max(0, step));
     target.value = clamped;
     offset.value = withTiming(clamped * ROW, { duration, easing: settleEasing });
+    report(clamped);
   }
 
   // Follow the value when the parent changes it (e.g. a reset).
@@ -193,6 +205,8 @@ export function ScrollWheel({
       .onUpdate((event) => {
         offset.value = rubberBand(dragStart.value - event.translationY, count, loop);
       })
+      // `report` reads refs, but only when the gesture ends — never during render.
+      // eslint-disable-next-line react-hooks/refs
       .onEnd((event) => {
         // Project where a UIScrollView-style deceleration would stop, then
         // land on the nearest row so the wheel always rests on a value.
@@ -207,8 +221,10 @@ export function ScrollWheel({
           speed > 0.05 ? Math.min(1100, Math.max(260, (3 * distance) / speed)) : 240;
         target.value = step;
         offset.value = withTiming(step * ROW, { duration, easing: settleEasing });
+        runOnJS(report)(step);
       });
 
+    // eslint-disable-next-line react-hooks/refs -- see the pan's onEnd
     const tap = Gesture.Tap().onEnd((event) => {
       // A tap above or below the band brings that row to the centre.
       const fromCentre = event.y - RADIUS;
@@ -219,6 +235,7 @@ export function ScrollWheel({
       if (!loop) step = Math.min(count - 1, Math.max(0, step));
       target.value = step;
       offset.value = withTiming(step * ROW, { duration: 260, easing: settleEasing });
+      runOnJS(report)(step);
     });
 
     return Gesture.Race(pan, tap);
