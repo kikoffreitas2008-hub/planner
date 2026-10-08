@@ -20,9 +20,11 @@ import { remember } from "@/data/repositories";
 import { useUnansweredDays } from "@/data/timeLogs";
 import type { AgendaItem } from "@/domain/agenda";
 import { quoteForLocalDate, type BibleQuote } from "@/domain/dailyQuote";
+import type { ISODate } from "@/domain/date";
 import type { RecurrenceScope } from "@/domain/recurrenceMutation";
 import { primeKeyboard } from "@/lib/keyboardPrime";
-import { formatDayHeading, nextDate, todayInLisbon } from "@/lib/today";
+import { formatDayHeading, nextDate } from "@/lib/today";
+import { useLisbonToday } from "@/lib/useLisbonToday";
 
 const QUOTES = quotesData as BibleQuote[];
 
@@ -32,17 +34,28 @@ type FormState =
   | { mode: "edit"; item: AgendaItem };
 
 export default function TodayScreen() {
-  const realToday = todayInLisbon();
+  const realToday = useLisbonToday();
   const [viewDate, setViewDate] = useState(realToday);
   const [form, setForm] = useState<FormState>(null);
   const [routineAddSignal, setRoutineAddSignal] = useState(0);
-  const [overdueDismissed, setOverdueDismissed] = useState(false);
+  // Each review is put away for the day it was dismissed on, so a new day
+  // brings it back even if the app was never closed.
+  const [overdueDismissedOn, setOverdueDismissedOn] = useState<ISODate | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [timeLogDismissed, setTimeLogDismissed] = useState(false);
+  const [timeLogDismissedOn, setTimeLogDismissedOn] = useState<ISODate | null>(null);
 
   const quote = useMemo(() => quoteForLocalDate(realToday, QUOTES), [realToday]);
   const overdue = useOverdueCandidates(realToday);
   const unanswered = useUnansweredDays(realToday);
+  const overdueDismissed = overdueDismissedOn === realToday;
+  const timeLogDismissed = timeLogDismissedOn === realToday;
+
+  // A new day while the app stayed open: move the agenda to it.
+  const [agendaDay, setAgendaDay] = useState(realToday);
+  if (agendaDay !== realToday) {
+    setAgendaDay(realToday);
+    setViewDate(realToday);
+  }
   const isPlanningTomorrow = viewDate !== realToday;
 
   function handleSubmit(result: AgendaFormResult, scope?: RecurrenceScope) {
@@ -146,7 +159,7 @@ export default function TodayScreen() {
         <OverdueReviewSheet
           candidates={overdue}
           today={realToday}
-          onDone={() => setOverdueDismissed(true)}
+          onDone={() => setOverdueDismissedOn(realToday)}
         />
       ) : null}
 
@@ -154,7 +167,7 @@ export default function TodayScreen() {
       {unanswered.length > 0 &&
       !timeLogDismissed &&
       (overdue.length === 0 || overdueDismissed) ? (
-        <TimeLogSheet days={unanswered} onClose={() => setTimeLogDismissed(true)} />
+        <TimeLogSheet days={unanswered} onClose={() => setTimeLogDismissedOn(realToday)} />
       ) : null}
 
       {settingsOpen ? <SettingsSheet onClose={() => setSettingsOpen(false)} /> : null}
