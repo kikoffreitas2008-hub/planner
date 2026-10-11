@@ -8,6 +8,7 @@ import {
   WheelSelectionBand,
   nearestMinuteValue,
 } from "@/components/ui/ScrollWheel";
+import { shiftEndWithStart } from "@/domain/timeRange";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
 
 const HOURS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0"));
@@ -30,12 +31,18 @@ export function TimeRangeWheels({ start, end, onChangeStart, onChangeEnd }: Time
   const hour = field === "start" ? startH : endH;
   const minute = field === "start" ? startM : endM;
 
+  // A new start carries the end along with it, so the length stays put
+  // (as on the iPhone). A new end just changes the length.
+  function moveStart(nextStart: string) {
+    onChangeStart(nextStart);
+    onChangeEnd(shiftEndWithStart(start, end, nextStart));
+  }
   function setHour(next: string) {
-    if (field === "start") onChangeStart(`${next}:${startM}`);
+    if (field === "start") moveStart(`${next}:${startM}`);
     else onChangeEnd(`${next}:${endM}`);
   }
   function setMinute(next: string) {
-    if (field === "start") onChangeStart(`${startH}:${next}`);
+    if (field === "start") moveStart(`${startH}:${next}`);
     else onChangeEnd(`${endH}:${next}`);
   }
 
