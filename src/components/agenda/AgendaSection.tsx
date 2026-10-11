@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { generateKeyBetween } from "fractional-indexing";
 
 import { AgendaItemCard } from "@/components/agenda/AgendaItemCard";
 import { SwipeableRow } from "@/components/agenda/SwipeableRow";
@@ -9,7 +8,7 @@ import { TimeEditModal } from "@/components/agenda/TimeEditModal";
 import { DraggableColumn } from "@/components/projects/DraggableColumn";
 import { Touchable } from "@/components/ui/Touchable";
 import { useDayAgenda } from "@/data/agenda";
-import { toggleAgendaComplete } from "@/data/agendaEdit";
+import { reorderDayAgenda, toggleAgendaComplete } from "@/data/agendaEdit";
 import { calendarItems, projectItems, settings } from "@/data/repositories";
 import { getDatabase, useUserSettings } from "@/data/store";
 import { offerUndo } from "@/data/undoBar";
@@ -70,20 +69,7 @@ export function AgendaSection({
   }
 
   function reorder(orderedOccurrenceIds: string[]) {
-    const byOcc = new Map(items.map((entry) => [entry.occurrenceId, entry]));
-    let previous: string | null = null;
-    for (const occurrenceId of orderedOccurrenceIds) {
-      const entry = byOcc.get(occurrenceId);
-      if (!entry) continue;
-      const key = generateKeyBetween(previous, null);
-      if (entry.origin.kind === "calendar") {
-        calendarItems.update(entry.origin.id, { manual_sort_key: key });
-      } else {
-        projectItems.update(entry.origin.id, { manual_sort_key: key });
-      }
-      previous = key;
-    }
-    settings.setDayManualOrder(date, true);
+    reorderDayAgenda(date, items, orderedOccurrenceIds);
   }
 
   const rows = items.map((item) => ({ id: item.occurrenceId, item }));

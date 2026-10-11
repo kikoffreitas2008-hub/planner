@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useLocalSearchParams } from "expo-router";
@@ -6,6 +6,7 @@ import { useLocalSearchParams } from "expo-router";
 import { AgendaFormModal, type AgendaFormResult } from "@/components/agenda/AgendaFormModal";
 import { MonthGrid } from "@/components/calendar/MonthGrid";
 import { TimelineView } from "@/components/calendar/TimelineView";
+import { DraggableColumn } from "@/components/projects/DraggableColumn";
 import { AppScreen } from "@/components/ui/AppScreen";
 import { Divider } from "@/components/ui/Divider";
 import { GlobalSearchButton } from "@/components/search/GlobalSearchButton";
@@ -14,7 +15,13 @@ import { PlusMenu } from "@/components/ui/PlusMenu";
 import { Touchable } from "@/components/ui/Touchable";
 import { ViewSwitcher } from "@/components/ui/ViewSwitcher";
 import { useDayAgenda, useRangeAgenda } from "@/data/agenda";
-import { applyFormEdit, createFromForm, deleteAgendaItem, toggleAgendaComplete } from "@/data/agendaEdit";
+import {
+  applyFormEdit,
+  createFromForm,
+  deleteAgendaItem,
+  reorderDayAgenda,
+  toggleAgendaComplete,
+} from "@/data/agendaEdit";
 import { useUserSettings } from "@/data/store";
 import type { AgendaItem } from "@/domain/agenda";
 import {
@@ -52,6 +59,7 @@ export default function CalendarScreen() {
   );
   const [form, setForm] = useState<FormState>(null);
   const bodyRef = useRevealFallback<View>(!reduceMotion, view);
+  const suppressTapUntil = useRef<Record<string, number>>({});
 
   const range = useMemo(() => {
     if (view === "day") return { start: focusDate, end: focusDate };
@@ -174,27 +182,41 @@ export default function CalendarScreen() {
               {dayItems.length === 0 ? (
                 <Text style={styles.empty}>Nothing on this day.</Text>
               ) : (
-                dayItems.map((item) => (
-                  <Touchable
-                    key={item.occurrenceId}
-                    variant="row"
-                    onPress={() => setForm({ mode: "edit", item })}
-                    style={styles.dayRow}
-                  >
-                    <View style={[styles.rowDot, { backgroundColor: palette[item.color].start }]} />
-                    <Text style={styles.rowTitle} numberOfLines={1}>
-                      {item.completedAt ? "✓ " : ""}
-                      {item.title}
-                    </Text>
-                    <Text style={styles.rowTime}>
-                      {item.allDay
-                        ? "All day"
-                        : item.startsAt
-                          ? formatClock(item.startsAt)
-                          : ""}
-                    </Text>
-                  </Touchable>
-                ))
+                <DraggableColumn
+                  data={dayItems.map((item) => ({ id: item.occurrenceId, item }))}
+                  dragMode="longPress"
+                  estimatedRowHeight={44}
+                  onReorder={(orderedIds) => reorderDayAgenda(focusDate, dayItems, orderedIds)}
+                  onDragAttempt={(id) => {
+                    suppressTapUntil.current[id] = Date.now() + 400;
+                  }}
+                  renderItem={({ id, item }) => (
+                    <Touchable
+                      variant="row"
+                      onPress={() => {
+                        // A drag that failed still releases like a tap.
+                        if ((suppressTapUntil.current[id] ?? 0) > Date.now()) return;
+                        setForm({ mode: "edit", item });
+                      }}
+                      // Holding a row is only for reordering; lifting it must not open it.
+                      onLongPress={() => {}}
+                      style={styles.dayRow}
+                    >
+                      <View style={[styles.rowDot, { backgroundColor: palette[item.color].start }]} />
+                      <Text style={styles.rowTitle} numberOfLines={1}>
+                        {item.completedAt ? "✓ " : ""}
+                        {item.title}
+                      </Text>
+                      <Text style={styles.rowTime}>
+                        {item.allDay
+                          ? "All day"
+                          : item.startsAt
+                            ? formatClock(item.startsAt)
+                            : ""}
+                      </Text>
+                    </Touchable>
+                  )}
+                />
               )}
             </View>
           </>

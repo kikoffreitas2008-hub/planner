@@ -37,6 +37,18 @@ const NOTCH_PX = 40;
 /** Trackpad scrolling snaps to the nearest row after this long without input. */
 const TRACKPAD_SETTLE_MS = 120;
 
+/** Every minute wheel steps in fives: 00, 05, … 55. */
+export const MINUTE_STEP = 5;
+export const MINUTE_VALUES = Array.from({ length: 60 / MINUTE_STEP }, (_, index) =>
+  String(index * MINUTE_STEP).padStart(2, "0"),
+);
+
+/** The minute-wheel row for any minute (17:03 shows as 05); never rolls into the next hour. */
+export function nearestMinuteValue(minute: number): string {
+  const snapped = Math.min(60 - MINUTE_STEP, Math.round(minute / MINUTE_STEP) * MINUTE_STEP);
+  return String(snapped).padStart(2, "0");
+}
+
 const settleEasing = Easing.out(Easing.cubic);
 
 export type ScrollWheelProps = {

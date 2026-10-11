@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { ScrollWheel, WHEEL_HEIGHT, WheelSelectionBand } from "@/components/ui/ScrollWheel";
+import {
+  MINUTE_VALUES,
+  ScrollWheel,
+  WHEEL_HEIGHT,
+  WheelSelectionBand,
+  nearestMinuteValue,
+} from "@/components/ui/ScrollWheel";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
 
 const HOURS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0"));
-const MINUTES = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, "0"));
 
 export type TimeRangeWheelsProps = {
   /** "HH:MM" */
@@ -67,8 +72,8 @@ export function TimeRangeWheels({ start, end, onChangeStart, onChangeEnd }: Time
         <Text style={styles.colon}>:</Text>
         <ScrollWheel
           key={`minute-${field}`}
-          values={MINUTES}
-          value={minute}
+          values={MINUTE_VALUES}
+          value={nearestMinuteValue(Number(minute))}
           onChange={setMinute}
           accessibilityLabel="Minute"
           loop
