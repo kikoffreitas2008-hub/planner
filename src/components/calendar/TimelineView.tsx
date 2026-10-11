@@ -10,7 +10,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { markSwipe, swipedRecently } from "@/components/agenda/swipeGuard";
-import { moveAgendaItem, resizeAgendaItem } from "@/data/agendaEdit";
+import { moveAgendaItem, resizeAgendaItem, swapAgendaTimes } from "@/data/agendaEdit";
 import { useUserSettings } from "@/data/store";
 import type { AgendaItem } from "@/domain/agenda";
 import { weekRange, weekdayLabels } from "@/domain/calendarGrid";
@@ -170,6 +170,21 @@ function DayColumn({
     [items],
   );
 
+  // Dropped with the finger over another block: the two trade times.
+  // Anywhere else: the block moves there, keeping its length.
+  function drop(dragged: AgendaItem, newTopMinutes: number, pointerMinutes: number) {
+    const target = items.find((other) => {
+      if (other.occurrenceId === dragged.occurrenceId || !other.startsAt || !other.endsAt) {
+        return false;
+      }
+      const start = isoToMinutes(other.startsAt, date);
+      const end = isoToMinutes(other.endsAt, date);
+      return pointerMinutes >= start && pointerMinutes < end;
+    });
+    if (target) swapAgendaTimes(dragged, target);
+    else moveAgendaItem(dragged, date, newTopMinutes);
+  }
+
   return (
     <>
       {placements.map((placement) => {
@@ -180,9 +195,9 @@ function DayColumn({
             key={placement.id}
             item={item}
             placement={placement}
-            date={date}
             draggable={draggable}
             onOpen={() => onOpenItem(item)}
+            onDrop={drop}
           />
         );
       })}
@@ -193,17 +208,18 @@ function DayColumn({
 function TimelineBlock({
   item,
   placement,
-  date,
   draggable,
   onOpen,
+  onDrop,
 }: {
   item: AgendaItem;
   placement: TimelinePlacement;
-  date: ISODate;
   draggable: boolean;
   onOpen: () => void;
+  onDrop: (item: AgendaItem, newTopMinutes: number, pointerMinutes: number) => void;
 }) {
   const moveY = useSharedValue(0);
+  const grabY = useSharedValue(0);
   const extraHeight = useSharedValue(0);
   const ink = palette[item.color].ink;
   const reduceMotion = useUserSettings()?.reduce_motion ?? false;
@@ -213,7 +229,8 @@ function TimelineBlock({
     .enabled(draggable)
     .minDistance(6)
     .failOffsetX([-14, 14])
-    .onBegin(() => {
+    .onBegin((event) => {
+      grabY.value = event.y;
       runOnJS(markSwipe)();
     })
     .onUpdate((event) => {
@@ -221,8 +238,9 @@ function TimelineBlock({
     })
     .onEnd(() => {
       const newTop = Math.max(0, placement.top + moveY.value);
+      const pointer = newTop + grabY.value;
       runOnJS(markSwipe)();
-      runOnJS(moveAgendaItem)(item, date, (newTop / PPH) * 60);
+      runOnJS(onDrop)(item, (newTop / PPH) * 60, (pointer / PPH) * 60);
       moveY.value = reduceMotion ? withTiming(0, { duration: 0 }) : withSpring(0);
     });
 

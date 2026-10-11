@@ -2,7 +2,13 @@ import { useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { PopIn } from "@/components/ui/PopIn";
-import { ScrollWheel, WHEEL_HEIGHT, WheelSelectionBand } from "@/components/ui/ScrollWheel";
+import {
+  MINUTE_VALUES,
+  ScrollWheel,
+  WHEEL_HEIGHT,
+  WheelSelectionBand,
+  nearestMinuteValue,
+} from "@/components/ui/ScrollWheel";
 import { Touchable } from "@/components/ui/Touchable";
 import { formatDuration } from "@/domain/duration";
 import { colors, radius, shadow, spacing, typography } from "@/theme/tokens";
@@ -17,7 +23,6 @@ export type DurationFieldProps = {
 };
 
 const HOURS = Array.from({ length: 24 }, (_, index) => String(index));
-const MINUTES = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, "0"));
 
 /**
  * The task's estimated time. A button showing the current estimate that opens
@@ -96,8 +101,8 @@ export function DurationField({
               <View style={styles.column}>
                 <ScrollWheel
                   key={`m-${open}`}
-                  values={MINUTES}
-                  value={String(m).padStart(2, "0")}
+                  values={MINUTE_VALUES}
+                  value={nearestMinuteValue(m)}
                   onChange={(next) => setM(Number(next))}
                   accessibilityLabel="Minutes"
                   loop

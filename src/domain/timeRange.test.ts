@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { validateTimeRange } from "./timeRange.ts";
+import { shiftEndWithStart, validateTimeRange } from "./timeRange.ts";
 
 test("a normal daytime range converts wall-clock Lisbon time to UTC", () => {
   const result = validateTimeRange({
@@ -72,4 +72,20 @@ test("the spring-forward night still yields a valid instant", () => {
     assert.equal(result.startsAt, "2026-03-29T00:30:00.000Z");
     assert.equal(result.endsAt, "2026-03-29T02:30:00.000Z");
   }
+});
+
+test("moving the start moves the end by the same amount", () => {
+  assert.equal(shiftEndWithStart("17:00", "18:30", "17:15"), "18:45");
+  assert.equal(shiftEndWithStart("17:00", "18:30", "16:00"), "17:30");
+  assert.equal(shiftEndWithStart("09:00", "09:00", "10:00"), "10:00");
+});
+
+test("a range that crosses midnight keeps its length", () => {
+  assert.equal(shiftEndWithStart("23:00", "00:30", "22:00"), "23:30");
+  assert.equal(shiftEndWithStart("22:00", "23:00", "23:30"), "00:30");
+});
+
+test("minutes off the five-minute grid are carried over unchanged", () => {
+  assert.equal(shiftEndWithStart("17:03", "18:03", "17:05"), "18:05");
+  assert.equal(shiftEndWithStart("17:00", "17:47", "18:00"), "18:47");
 });

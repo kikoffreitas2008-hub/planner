@@ -98,3 +98,19 @@ export function validateTimeRange(
     valid: true,
   };
 }
+
+function toMinutes(clock: string): number {
+  const [hours, minutes] = clock.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+/**
+ * The end time after the start moves from `start` to `nextStart`, keeping the
+ * range's length — as the iPhone calendar does. "HH:MM" in and out; a range
+ * that crosses midnight stays one that does.
+ */
+export function shiftEndWithStart(start: string, end: string, nextStart: string): string {
+  const length = (((toMinutes(end) - toMinutes(start)) % 1440) + 1440) % 1440;
+  const nextEnd = (toMinutes(nextStart) + length) % 1440;
+  return `${String(Math.floor(nextEnd / 60)).padStart(2, "0")}:${String(nextEnd % 60).padStart(2, "0")}`;
+}
