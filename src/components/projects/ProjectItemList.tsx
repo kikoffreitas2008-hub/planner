@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
+import { SwipeableRow } from "@/components/agenda/SwipeableRow";
+import { swipedRecently } from "@/components/agenda/swipeGuard";
 import { CompletedItemDialog } from "@/components/projects/CompletedItemDialog";
 import { DraggableColumn } from "@/components/projects/DraggableColumn";
 import { ProjectItemRow, ROW_HEIGHT } from "@/components/projects/ProjectItemRow";
@@ -76,6 +78,8 @@ export function ProjectItemList({ project, parentId, items, onOpenItem }: Projec
   }
 
   function openItem(item: ProjectItem) {
+    // A horizontal swipe also releases like a tap; don't open the sheet for it.
+    if (swipedRecently()) return;
     if (onOpenItem) onOpenItem(item);
     else setSheetItem(item);
   }
@@ -113,11 +117,18 @@ export function ProjectItemList({ project, parentId, items, onOpenItem }: Projec
           onReorder={(orderedIds) => projectItems.applyOrder(project.id, orderedIds)}
           renderItem={(item) => (
             <View style={{ paddingBottom: ROW_GAP }}>
-              <ProjectItemRow
-                item={item}
-                onOpen={() => openItem(item)}
-                onToggleComplete={() => toggleComplete(item)}
-              />
+              <SwipeableRow
+                enabled={!editMode}
+                onSwipeRight={() => toggleComplete(item)}
+                onSwipeLeft={() => deleteItem(item)}
+                rightLabel={item.completed_at ? "Re-open" : "Complete"}
+              >
+                <ProjectItemRow
+                  item={item}
+                  onOpen={() => openItem(item)}
+                  onToggleComplete={() => toggleComplete(item)}
+                />
+              </SwipeableRow>
             </View>
           )}
         />
