@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 import { ColorSwatches } from "@/components/ui/ColorSwatches";
 import { Touchable } from "@/components/ui/Touchable";
@@ -20,6 +28,20 @@ export function ProjectSettingsSheet({
   onArchivedOrDeleted,
 }: ProjectSettingsSheetProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [title, setTitle] = useState(project.title);
+
+  /** Rename on blur, submit or close; an empty name keeps the old one. */
+  function commitTitle() {
+    const next = title.trim();
+    if (!next) setTitle(project.title);
+    else if (next !== project.title)
+      projects.update(project.id, { title: next });
+  }
+
+  function close() {
+    commitTitle();
+    onClose();
+  }
 
   function archive() {
     projects.archive(project.id);
@@ -27,24 +49,46 @@ export function ProjectSettingsSheet({
   }
 
   function deletePermanently() {
-    projects.purge(project.id);
-    offerUndo("Project deleted", () => {}, () => {});
+    const id = project.id;
+    projects.softDelete(id);
+    offerUndo(
+      "Project deleted",
+      () => projects.undelete(id),
+      () => projects.purge(id),
+    );
     onArchivedOrDeleted();
   }
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible transparent animationType="slide" onRequestClose={close}>
       <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} accessibilityLabel="Close" onPress={onClose} />
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          accessibilityLabel="Close"
+          onPress={close}
+        />
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>Project settings</Text>
-            <Touchable onPress={onClose} accessibilityLabel="Close">
+            <Touchable onPress={close} accessibilityLabel="Close">
               <Text style={styles.close}>✕</Text>
             </Touchable>
           </View>
 
           <View style={styles.body}>
+            <Text style={styles.sectionLabel}>Name</Text>
+            <TextInput
+              value={title}
+              onChangeText={setTitle}
+              onBlur={commitTitle}
+              onSubmitEditing={commitTitle}
+              returnKeyType="done"
+              accessibilityLabel="Project name"
+              placeholder="Project name"
+              placeholderTextColor={colors.textSecondary}
+              style={styles.input}
+            />
+
             <Text style={styles.sectionLabel}>Colour</Text>
             <ColorSwatches
               value={project.color}
@@ -57,17 +101,23 @@ export function ProjectSettingsSheet({
                 <Touchable
                   key={option}
                   haptic="selection"
-                  onPress={() => projects.update(project.id, { progress_mode: option })}
-                  accessibilityState={{ selected: project.progress_mode === option }}
+                  onPress={() =>
+                    projects.update(project.id, { progress_mode: option })
+                  }
+                  accessibilityState={{
+                    selected: project.progress_mode === option,
+                  }}
                   style={[
                     styles.segmentButton,
-                    project.progress_mode === option && styles.segmentButtonActive,
+                    project.progress_mode === option &&
+                      styles.segmentButtonActive,
                   ]}
                 >
                   <Text
                     style={[
                       styles.segmentText,
-                      project.progress_mode === option && styles.segmentTextActive,
+                      project.progress_mode === option &&
+                        styles.segmentTextActive,
                     ]}
                   >
                     {option === "items" ? "By count" : "By time"}
@@ -82,7 +132,9 @@ export function ProjectSettingsSheet({
                 onPress={() => projects.restoreImportanceOrder(project.id)}
                 style={styles.action}
               >
-                <Text style={styles.actionText}>Restore importance ordering</Text>
+                <Text style={styles.actionText}>
+                  Restore importance ordering
+                </Text>
               </Touchable>
             ) : null}
 
@@ -101,7 +153,9 @@ export function ProjectSettingsSheet({
                     haptic="warning"
                     style={styles.confirmDelete}
                   >
-                    <Text style={styles.confirmDeleteText}>Delete permanently</Text>
+                    <Text style={styles.confirmDeleteText}>
+                      Delete permanently
+                    </Text>
                   </Touchable>
                   <Touchable
                     variant="row"
@@ -118,7 +172,9 @@ export function ProjectSettingsSheet({
                 onPress={() => setConfirmingDelete(true)}
                 style={styles.action}
               >
-                <Text style={[styles.actionText, styles.danger]}>Delete permanently</Text>
+                <Text style={[styles.actionText, styles.danger]}>
+                  Delete permanently
+                </Text>
               </Touchable>
             )}
           </View>
@@ -139,7 +195,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.large,
     borderTopRightRadius: radius.large,
     paddingBottom: spacing.xl,
-    ...(Platform.OS === "web" ? { boxShadow: "0 -8px 26px rgba(0,0,0,0.16)" } : shadow.floating),
+    ...(Platform.OS === "web"
+      ? { boxShadow: "0 -8px 26px rgba(0,0,0,0.16)" }
+      : shadow.floating),
   },
   header: {
     flexDirection: "row",
@@ -162,6 +220,15 @@ const styles = StyleSheet.create({
   sectionLabel: {
     ...typography.caption,
     color: colors.textSecondary,
+  },
+  input: {
+    ...typography.body,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    borderRadius: radius.medium,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   segment: {
     flexDirection: "row",

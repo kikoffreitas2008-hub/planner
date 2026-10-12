@@ -178,3 +178,54 @@ test("an archived item stays done and still counts toward progress", () => {
   projectItems.unarchive(done.id);
   assert.equal(getDatabase().project_items[done.id].archived_at, null);
 });
+
+test("deleting a project hides it and its items; undo brings back only what it hid", () => {
+  const project = makeProject();
+  const earlier = projectItems.create(project.id, null, { title: "deleted before" });
+  const kept = projectItems.create(project.id, null, { title: "kept" });
+  projectItems.update(earlier.id, { deleted_at: "2026-01-01T00:00:00.000Z" });
+
+  projects.softDelete(project.id);
+  assert.ok(getDatabase().projects[project.id].deleted_at);
+  assert.ok(getDatabase().project_items[kept.id].deleted_at);
+
+  projects.undelete(project.id);
+  assert.equal(getDatabase().projects[project.id].deleted_at, null);
+  assert.equal(getDatabase().project_items[kept.id].deleted_at, null);
+  assert.ok(getDatabase().project_items[earlier.id].deleted_at);
+  assert.equal(Object.keys(getDatabase().sync_tombstones).length, 0);
+});
+
+test("a soft-deleted project can still be purged into a tombstone", () => {
+  const project = makeProject();
+  projects.softDelete(project.id);
+  projects.purge(project.id);
+  assert.ok(getDatabase().projects[project.id].deleted_at);
+  assert.equal(Object.values(getDatabase().sync_tombstones)[0].entity_id, project.id);
+});
+
+test("deleting a structured task takes its subtasks with it, and undo restores them", () => {
+  const project = makeProject({ mode: "structured" });
+  const task = projectItems.create(project.id, null, { title: "Task" });
+  const sub = projectItems.create(project.id, task.id, { title: "sub" });
+  const earlier = projectItems.create(project.id, task.id, { title: "gone already" });
+  projectItems.update(earlier.id, { deleted_at: "2026-01-01T00:00:00.000Z" });
+
+  projectItems.softDelete(task.id);
+  assert.ok(getDatabase().project_items[task.id].deleted_at);
+  assert.ok(getDatabase().project_items[sub.id].deleted_at);
+
+  projectItems.restore(task.id);
+  assert.equal(getDatabase().project_items[task.id].deleted_at, null);
+  assert.equal(getDatabase().project_items[sub.id].deleted_at, null);
+  assert.ok(getDatabase().project_items[earlier.id].deleted_at);
+});
+
+test("purging an item leaves a tombstone", () => {
+  const project = makeProject();
+  const item = projectItems.create(project.id, null, { title: "gone" });
+  projectItems.softDelete(item.id);
+  projectItems.purge(item.id);
+  const tombstones = Object.values(getDatabase().sync_tombstones);
+  assert.deepEqual(tombstones.map((t) => t.entity_id), [item.id]);
+});

@@ -23,7 +23,7 @@ export default function ProjectDetailScreen() {
   const reduceMotion = useUserSettings()?.reduce_motion ?? false;
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  if (!project) {
+  if (!project || project.deleted_at) {
     return (
       <View style={styles.screen}>
         <BackBar title="Project" />

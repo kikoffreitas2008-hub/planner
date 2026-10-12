@@ -314,6 +314,31 @@ export const projects = {
     }
   },
 
+  /** Hide the project and its live items under one timestamp, so undo can tell them apart. */
+  softDelete(id: string): void {
+    const project = getDatabase().projects[id];
+    if (!project || project.deleted_at) return;
+    const timestamp = nowISO();
+    for (const item of Object.values(getDatabase().project_items)) {
+      if (item.project_id === id && !item.deleted_at) {
+        touch("project_items", item.id, { deleted_at: timestamp });
+      }
+    }
+    touch("projects", id, { deleted_at: timestamp });
+  },
+
+  /** Undo softDelete: the project and the items it hid, not ones deleted earlier. */
+  undelete(id: string): void {
+    const project = getDatabase().projects[id];
+    if (!project?.deleted_at) return;
+    for (const item of Object.values(getDatabase().project_items)) {
+      if (item.project_id === id && item.deleted_at === project.deleted_at) {
+        touch("project_items", item.id, { deleted_at: null });
+      }
+    }
+    touch("projects", id, { deleted_at: null });
+  },
+
   /** Permanent delete: the project and its items, soft-deleted, plus a tombstone. */
   purge(id: string): void {
     const project = getDatabase().projects[id];
@@ -424,14 +449,32 @@ export const projectItems = {
     touch("projects", projectId, { order_mode: "manual" });
   },
 
+  /** Hide an item; a structured task takes its live subtasks along, under the same timestamp. */
   softDelete(id: string): void {
-    touch("project_items", id, { deleted_at: nowISO() });
+    const item = getDatabase().project_items[id];
+    if (!item || item.deleted_at) return;
+    const timestamp = nowISO();
+    for (const child of Object.values(getDatabase().project_items)) {
+      if (child.parent_id === id && !child.deleted_at) {
+        touch("project_items", child.id, { deleted_at: timestamp });
+      }
+    }
+    touch("project_items", id, { deleted_at: timestamp });
   },
 
+  /** Undo softDelete: the item and the subtasks it hid, not ones deleted earlier. */
   restore(id: string): void {
+    const item = getDatabase().project_items[id];
+    if (!item?.deleted_at) return;
+    for (const child of Object.values(getDatabase().project_items)) {
+      if (child.parent_id === id && child.deleted_at === item.deleted_at) {
+        touch("project_items", child.id, { deleted_at: null });
+      }
+    }
     touch("project_items", id, { deleted_at: null });
   },
 
+  /** Permanent delete: soft-delete the item and its subtasks, plus a tombstone. */
   purge(id: string): void {
     const item = getDatabase().project_items[id];
     if (!item) return;
@@ -441,6 +484,7 @@ export const projectItems = {
         touch("project_items", child.id, { deleted_at: timestamp });
       }
     }
+    tombstone("project_items", id);
     if (!item.deleted_at) touch("project_items", id, { deleted_at: timestamp });
   },
 };
