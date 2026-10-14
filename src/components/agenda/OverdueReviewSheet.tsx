@@ -23,13 +23,17 @@ export type OverdueReviewSheetProps = {
  * new time — not optional (blueprint/01 section 3.6).
  */
 export function OverdueReviewSheet({ candidates, today, onDone }: OverdueReviewSheetProps) {
+  // The list is fixed when the sheet opens. `candidates` is live store data:
+  // resolving one row writes, the write syncs, and the pull can reshape or
+  // empty that list — the other rows must stay put until each is resolved.
+  const [items] = useState(candidates);
   const [pending, setPending] = useState<readonly string[]>(() =>
     candidates.map((item) => item.origin.id),
   );
 
   const rows = useMemo(
-    () => candidates.filter((item) => pending.includes(item.origin.id)),
-    [candidates, pending],
+    () => items.filter((item) => pending.includes(item.origin.id)),
+    [items, pending],
   );
 
   function resolve(id: string) {

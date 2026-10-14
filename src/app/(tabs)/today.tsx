@@ -48,6 +48,14 @@ export default function TodayScreen() {
   const overdue = useOverdueCandidates(realToday);
   const unanswered = useUnansweredDays(realToday);
   const overdueDismissed = overdueDismissedOn === realToday;
+  // Once the review opens it stays open until Done. A reschedule or delete
+  // triggers a sync, and a pull can empty `overdue` (e.g. another device
+  // already reviewed today) — that must not yank the sheet away mid-review.
+  const [overdueOpenOn, setOverdueOpenOn] = useState<ISODate | null>(null);
+  if (overdue.length > 0 && !overdueDismissed && overdueOpenOn !== realToday) {
+    setOverdueOpenOn(realToday);
+  }
+  const overdueOpen = overdueOpenOn === realToday && !overdueDismissed;
   const timeLogDismissed = timeLogDismissedOn === realToday;
 
   // A new day while the app stayed open: move the agenda to it.
@@ -155,7 +163,7 @@ export default function TodayScreen() {
         />
       ) : null}
 
-      {overdue.length > 0 && !overdueDismissed ? (
+      {overdueOpen ? (
         <OverdueReviewSheet
           candidates={overdue}
           today={realToday}
@@ -166,7 +174,7 @@ export default function TodayScreen() {
       {/* After the overdue review, never on top of it. */}
       {unanswered.length > 0 &&
       !timeLogDismissed &&
-      (overdue.length === 0 || overdueDismissed) ? (
+      !overdueOpen ? (
         <TimeLogSheet days={unanswered} onClose={() => setTimeLogDismissedOn(realToday)} />
       ) : null}
 
