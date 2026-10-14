@@ -9,9 +9,9 @@ export const TIME_AREAS: readonly TimeArea[] = ["university", "extras"];
 /** The first day that counts. Nothing earlier is asked about or summed. */
 export const TRACKING_START = "2026-10-09" as ISODate;
 
-/** Minutes per day: Monday–Thursday, then Friday–Sunday. */
-const WEEKDAY_TARGETS: Record<TimeArea, number> = { university: 60, extras: 90 };
-const WEEKEND_TARGETS: Record<TimeArea, number> = { university: 120, extras: 0 };
+/** Minutes per day: Monday–Friday, then Saturday–Sunday. */
+const WEEKDAY_TARGETS: Record<TimeArea, number> = { university: 90, extras: 60 };
+const WEEKEND_TARGETS: Record<TimeArea, number> = { university: 90, extras: 0 };
 
 export interface TimeLogLike {
   date: ISODate;
@@ -24,7 +24,7 @@ export interface TimeLogLike {
 export function targetFor(date: ISODate, area: TimeArea): number {
   // 0 = Monday … 6 = Sunday.
   const day = (new Date(`${date}T00:00:00.000Z`).getUTCDay() + 6) % 7;
-  return (day <= 3 ? WEEKDAY_TARGETS : WEEKEND_TARGETS)[area];
+  return (day <= 4 ? WEEKDAY_TARGETS : WEEKEND_TARGETS)[area];
 }
 
 export function minutesFor(log: TimeLogLike, area: TimeArea): number {

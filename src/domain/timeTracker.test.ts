@@ -22,19 +22,21 @@ function log(date: string, university: number, extras: number, updatedAt = "2026
 }
 
 test("targets follow the weekday", () => {
-  // 2026-10-12 is a Monday, 2026-10-15 a Thursday, 2026-10-09 a Friday, 2026-10-11 a Sunday.
-  assert.equal(targetFor("2026-10-12", "university"), 60);
-  assert.equal(targetFor("2026-10-12", "extras"), 90);
-  assert.equal(targetFor("2026-10-15", "extras"), 90);
-  assert.equal(targetFor("2026-10-09", "university"), 120);
-  assert.equal(targetFor("2026-10-09", "extras"), 0);
-  assert.equal(targetFor("2026-10-11", "university"), 120);
+  // 2026-10-12 is a Monday, 2026-10-09 a Friday, 2026-10-10 a Saturday, 2026-10-11 a Sunday.
+  assert.equal(targetFor("2026-10-12", "university"), 90);
+  assert.equal(targetFor("2026-10-12", "extras"), 60);
+  assert.equal(targetFor("2026-10-09", "university"), 90);
+  assert.equal(targetFor("2026-10-09", "extras"), 60);
+  assert.equal(targetFor("2026-10-10", "university"), 90);
+  assert.equal(targetFor("2026-10-10", "extras"), 0);
+  assert.equal(targetFor("2026-10-11", "university"), 90);
+  assert.equal(targetFor("2026-10-11", "extras"), 0);
 });
 
 test("balance sums given minus target over logged days", () => {
   const logs = [log("2026-10-09", 90, 30), log("2026-10-12", 60, 120)];
-  assert.equal(balanceFor(logs, "university"), (90 - 120) + (60 - 60));
-  assert.equal(balanceFor(logs, "extras"), (30 - 0) + (120 - 90));
+  assert.equal(balanceFor(logs, "university"), (90 - 90) + (60 - 90));
+  assert.equal(balanceFor(logs, "extras"), (30 - 60) + (120 - 60));
 });
 
 test("the same day logged twice counts once, latest wins", () => {
@@ -43,7 +45,7 @@ test("the same day logged twice counts once, latest wins", () => {
     log("2026-10-09", 150, 0, "2026-10-10T02:00:00.000Z"),
   ];
   assert.equal(latestByDate(logs).length, 1);
-  assert.equal(balanceFor(logs, "university"), 150 - 120);
+  assert.equal(balanceFor(logs, "university"), 150 - 90);
 });
 
 test("deleted rows and days before the start never count", () => {
